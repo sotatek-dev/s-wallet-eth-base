@@ -14,6 +14,9 @@ import {
   override,
   Utils,
   Errors,
+  ITokenRemake,
+  getCurrency,
+  getType,
 } from 'sota-common';
 import LRU from 'lru-cache';
 import { EthTransaction } from './EthTransaction';
@@ -21,7 +24,9 @@ import * as EthTypeConverter from './EthTypeConverter';
 import { web3 } from './web3';
 import EthereumTx from 'ethereumjs-tx';
 import Web3 = require('web3');
+import Contract from 'web3/eth/contract';
 const logger = getLogger('EthGateway');
+import ERC20ABI from '../config/abi/erc20.json';
 
 const instance: EthGateway = null;
 const _cacheBlockNumber = {
@@ -355,6 +360,38 @@ export class EthGateway extends BaseGateway {
       .toString();
 
     return super._forwardTransaction(privateKey, fromAddress, toAddress, forwardAmount);
+  }
+
+  public getContractABI(): any {
+    return ERC20ABI;
+  }
+
+  public async getCurrencyInfo(address: string): Promise<ITokenRemake> {
+    const handledAddress = this.normalizeAddress(address);
+    try {
+      const contract: Contract = new web3.eth.Contract(this.getContractABI(), handledAddress);
+      const decimal = await (contract as any).methods.decimals().call();
+      const symbol = (await (contract as any).methods.symbol().call()).toLowerCase();
+      const name = await (contract as any).methods.name().call();
+      const result = {
+        family: getCurrency(),
+        symbol,
+        networkSymbol: symbol,
+        minimumDeposit: '0.05',
+        type: getType(),
+        name,
+        decimal,
+        precision: 0,
+        contractAddress: handledAddress,
+        subversionName: '.*',
+        network: this.getNetwork(),
+        hasMemo: 0,
+      };
+      return result;
+    } catch (e) {
+      logger.error(e);
+      return null;
+    }
   }
 
   /**
