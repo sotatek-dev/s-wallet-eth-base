@@ -13,6 +13,7 @@ import {
   TransactionStatus,
   override,
   Utils,
+  Errors,
 } from 'sota-common';
 import LRU from 'lru-cache';
 import { EthTransaction } from './EthTransaction';
@@ -291,12 +292,14 @@ export class EthGateway extends BaseGateway {
 
     _isRequestingTx.set(txid, true);
     const tx = await web3.eth.getTransaction(txid);
-    _isRequestingTx.delete(txid);
-
     if (!tx) {
       return null;
     }
+    if (!tx.blockNumber) {
+      throw Errors.apiDataNotUpdated;
+    }
 
+    _isRequestingTx.delete(txid);
     _cacheRawTxByHash.set(txid, tx);
     return tx;
   }
@@ -314,11 +317,10 @@ export class EthGateway extends BaseGateway {
 
     _isRequestingReceipt.set(txid, true);
     const receipt = await web3.eth.getTransactionReceipt(txid);
-    _isRequestingReceipt.delete(txid);
-
     if (!receipt) {
-      return null;
+      throw Errors.apiDataNotUpdated;
     }
+    _isRequestingReceipt.delete(txid);
 
     _cacheRawTxReceipt.set(txid, receipt);
     return receipt;
