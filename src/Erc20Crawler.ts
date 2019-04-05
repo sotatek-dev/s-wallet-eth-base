@@ -1,5 +1,6 @@
 import { EthCrawler } from './EthCrawler';
 import {
+  BaseGateway,
   getLogger,
   override,
   getListTokenSymbols,
@@ -7,19 +8,19 @@ import {
   listTokenByType,
   Utils,
   TokenType,
+  getType,
+  getGateway,
 } from 'sota-common';
-import Erc20Gateway from './Erc20Gateway';
 
 const logger = getLogger('Erc20Crawler');
 
 export class Erc20Crawler extends EthCrawler {
-  private _erc20Gateways: Erc20Gateway[] = [];
+  public _erc20Gateways: BaseGateway[] = [];
 
   constructor(options: CrawlerOptions) {
     super(options);
-    listTokenByType(TokenType.ERC20).forEach(token => {
-      const contractAddress = token.contractAddress;
-      const gateway = Erc20Gateway.getInstance(contractAddress);
+    listTokenByType(getType() as TokenType).forEach(token => {
+      const gateway = getGateway(token.symbol);
       this._erc20Gateways.push(gateway);
     });
   }
