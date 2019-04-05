@@ -1,7 +1,6 @@
 import EthGateway from './EthGateway';
 import Contract from 'web3/eth/contract';
 import { web3 } from './web3';
-import ERC20ABI from '../config/abi/erc20.json';
 import _ from 'lodash';
 import EthereumTx from 'ethereumjs-tx';
 import { override, Errors, IVOut, IRawTransaction, getTokenByContract, TokenType, getType } from 'sota-common';
@@ -32,7 +31,7 @@ export class Erc20Gateway extends EthGateway {
   public constructor(contractAddress: string) {
     super();
     this._contractAddress = contractAddress;
-    this._contract = new web3.eth.Contract(ERC20ABI, contractAddress);
+    this._contract = new web3.eth.Contract(this.getContractABI(), contractAddress);
     const token = getTokenByContract(getType() as TokenType, this._contractAddress);
     if (!token) {
       throw new Error(`Could not get ERC20 currency config: ${this._contractAddress}`);
@@ -121,7 +120,7 @@ export class Erc20Gateway extends EthGateway {
       return null;
     }
 
-    const inputs = _.find(ERC20ABI, abi => abi.type === 'event' && abi.name === 'Transfer').inputs;
+    const inputs = _.find(this.getContractABI(), abi => abi.type === 'event' && abi.name === 'Transfer').inputs;
     let parsedLog;
 
     try {
