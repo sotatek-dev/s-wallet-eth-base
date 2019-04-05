@@ -4,16 +4,7 @@ import { web3 } from './web3';
 import ERC20ABI from '../config/abi/erc20.json';
 import _ from 'lodash';
 import EthereumTx from 'ethereumjs-tx';
-import {
-  override,
-  Errors,
-  IVOut,
-  IRawTransaction,
-  Transactions,
-  getTokenByContract,
-  TokenType,
-  getType
-} from "sota-common";
+import { override, Errors, IVOut, IRawTransaction, getTokenByContract, TokenType, getType } from 'sota-common';
 import Erc20Transaction from './Erc20Transaction';
 
 const gatewaysMap = new Map<string, Erc20Gateway>();
@@ -42,7 +33,6 @@ export class Erc20Gateway extends EthGateway {
     super();
     this._contractAddress = contractAddress;
     this._contract = new web3.eth.Contract(ERC20ABI, contractAddress);
-    console.log(getType())
     const token = getTokenByContract(getType() as TokenType, this._contractAddress);
     if (!token) {
       throw new Error(`Could not get ERC20 currency config: ${this._contractAddress}`);
