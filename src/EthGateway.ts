@@ -322,11 +322,11 @@ export class EthGateway extends BaseGateway {
 
     _isRequestingReceipt.set(txid, true);
     const receipt = await web3.eth.getTransactionReceipt(txid);
+    _isRequestingReceipt.delete(txid);
     if (!receipt) {
       logger.error(`Could not get receipt of tx: txid=${txid}`);
       throw Errors.apiDataNotUpdated;
     }
-    _isRequestingReceipt.delete(txid);
 
     _cacheRawTxReceipt.set(txid, receipt);
     return receipt;
