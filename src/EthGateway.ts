@@ -297,6 +297,8 @@ export class EthGateway extends BaseGateway {
 
     _isRequestingTx.set(txid, true);
     const tx = await web3.eth.getTransaction(txid);
+    _isRequestingTx.delete(txid);
+
     if (!tx) {
       return null;
     }
@@ -304,7 +306,6 @@ export class EthGateway extends BaseGateway {
       throw Errors.apiDataNotUpdated;
     }
 
-    _isRequestingTx.delete(txid);
     _cacheRawTxByHash.set(txid, tx);
     return tx;
   }
