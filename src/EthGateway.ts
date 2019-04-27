@@ -3,32 +3,28 @@ import * as web3_accounts from 'web3/eth/accounts';
 import * as web3_types from 'web3/eth/types';
 import * as web3_types2 from 'web3/types';
 import {
-  BaseGateway,
   Block,
+  AccountBasedGateway,
   getLogger,
   IRawTransaction,
   ISignedRawTransaction,
   ISubmittedTransaction,
-  IVOut,
   TransactionStatus,
   override,
   Utils,
-  Errors,
-  ITokenRemake,
-  getCurrency,
-  getType,
+  CCEnv,
+  BlockchainPlatform,
+  Address,
+  BigNumber,
+  implement,
 } from 'sota-common';
 import LRU from 'lru-cache';
 import { EthTransaction } from './EthTransaction';
 import * as EthTypeConverter from './EthTypeConverter';
 import { web3 } from './web3';
 import EthereumTx from 'ethereumjs-tx';
-import Web3 = require('web3');
-import Contract from 'web3/eth/contract';
-const logger = getLogger('EthGateway');
-import ERC20ABI from '../config/abi/erc20.json';
 
-const instance: EthGateway = null;
+const logger = getLogger('EthGateway');
 const _cacheBlockNumber = {
   value: 0,
   updatedAt: 0,
@@ -45,24 +41,27 @@ const _cacheRawTxReceipt: LRU<string, web3_types2.TransactionReceipt> = new LRU(
 const _isRequestingTx: Map<string, boolean> = new Map<string, boolean>();
 const _isRequestingReceipt: Map<string, boolean> = new Map<string, boolean>();
 
-export class EthGateway extends BaseGateway {
+let instance: EthGateway = null;
+export class EthGateway extends AccountBasedGateway {
   @override
-  public static getInstance(options?: any): EthGateway {
-    if (instance) {
-      return instance;
+  public static getInstance(): EthGateway {
+    if (!instance) {
+      instance = new EthGateway();
     }
 
-    return new EthGateway();
+    return instance;
   }
 
   public constructor() {
-    super();
+    const currency = CCEnv.getOneNativeCurrency(BlockchainPlatform.Ethereum);
+    super(currency);
 
-    if (!this.getConfig().apiEndpoint) {
-      throw new Error(`Invalid ETH http provider endpoint`);
-    }
+    // TODO: FIXME
+    // if (!this.getConfig().apiEndpoint) {
+    //   throw new Error(`Invalid ETH http provider endpoint`);
+    // }
 
-    web3.setProvider(new Web3.providers.HttpProvider(this.getConfig().apiEndpoint));
+    // web3.setProvider(new Web3.providers.HttpProvider(this.getConfig().apiEndpoint));
   }
 
   /**
@@ -76,16 +75,6 @@ export class EthGateway extends BaseGateway {
     }
 
     return web3.utils.toChecksumAddress(address);
-  }
-
-  /**
-   * Create a new random account/address
-   *
-   * @returns {IAccount} the account object
-   * TODO: Remove this method. Use createAccountAsync in all cases instead
-   */
-  public createAccount(): web3_accounts.Account {
-    return web3.eth.accounts.create();
   }
 
   /**
@@ -111,9 +100,9 @@ export class EthGateway extends BaseGateway {
    * @param {String} address: address that want to query balance
    * @returns {Number}: the current balance of address
    */
-  public async getAddressBalance(address: string): Promise<string> {
+  public async getAddressBalance(address: string): Promise<BigNumber> {
     const balance = await web3.eth.getBalance(address);
-    return balance.toString();
+    return new BigNumber(balance.toString());
   }
 
   /**
@@ -146,18 +135,15 @@ export class EthGateway extends BaseGateway {
   /**
    * createRawTransaction construct raw transaction data without signature
    */
-  public async createRawTransaction(fromAddress: string, vouts: IVOut[]): Promise<IRawTransaction> {
-    if (vouts.length !== 1) {
-      throw new Error(`Ethereum only accepts 1 vout`);
-    }
-
-    const vout = vouts[0];
-    const toAddress = vout.toAddress;
-    const amount = web3.utils.toBN(vout.amount); // TODO: revise
+  @implement
+  public async constructRawTransaction(
+    fromAddress: Address,
+    toAddress: Address,
+    value: BigNumber
+  ): Promise<IRawTransaction> {
+    const amount = web3.utils.toBN(value);
     const nonce = await web3.eth.getTransactionCount(fromAddress);
-
     const gasPrice = web3.utils.toBN(await web3.eth.getGasPrice());
-
     const gasLimit = web3.utils.toBN(21000); // For ETH transaction 21000 gas is fixed
     const fee = gasLimit.mul(gasPrice);
 
@@ -165,13 +151,13 @@ export class EthGateway extends BaseGateway {
     const balance = web3.utils.toBN((await web3.eth.getBalance(fromAddress)).toString());
     if (balance.lt(amount.add(fee))) {
       throw new Error(
-        `Could not construct tx because of insufficient balance: address=${fromAddress}, balance=${balance} amount=${amount}, fee=${fee}`
+        `EthGateway::constructRawTransaction could not construct tx because of insufficient balance: \
+         address=${fromAddress}, balance=${balance}, amount=${amount}, fee=${fee}`
       );
     }
 
-    const chainId = this.getConfig().chainId;
     const tx = new EthereumTx({
-      chainId,
+      chainId: this._getChainId(),
       data: '',
       gasLimit: web3.utils.toHex(21000),
       gasPrice: web3.utils.toHex(gasPrice),
@@ -203,13 +189,13 @@ export class EthGateway extends BaseGateway {
    * @param rawData
    * @param coinKeys
    */
-  public async signRawTxBySinglePrivateKey(unsignedRaw: string, coinKeys: string): Promise<ISignedRawTransaction> {
-    if (coinKeys.startsWith('0x')) {
-      coinKeys = coinKeys.substr(2);
+  public async signRawTransaction(unsignedRaw: string, secret: string): Promise<ISignedRawTransaction> {
+    if (secret.startsWith('0x')) {
+      secret = secret.substr(2);
     }
 
     const ethTx = new EthereumTx(unsignedRaw);
-    const privateKey = Buffer.from(coinKeys, 'hex');
+    const privateKey = Buffer.from(secret, 'hex');
     ethTx.sign(privateKey);
 
     return {
@@ -273,7 +259,7 @@ export class EthGateway extends BaseGateway {
       return TransactionStatus.UNKNOWN;
     }
 
-    if (tx.confirmations < this.getConfig().requiredConfirmations) {
+    if (tx.confirmations < CCEnv.getCurrencyConfig(this._currency).requiredConfirmations) {
       return TransactionStatus.CONFIRMING;
     }
 
@@ -303,7 +289,7 @@ export class EthGateway extends BaseGateway {
       return null;
     }
     if (!tx.blockNumber) {
-      throw Errors.apiDataNotUpdated;
+      throw new Error(`getRawTransaction Something went wrong. tx doesn't have block number: ${txid}`);
     }
 
     _cacheRawTxByHash.set(txid, tx);
@@ -326,74 +312,44 @@ export class EthGateway extends BaseGateway {
     _isRequestingReceipt.delete(txid);
     if (!receipt) {
       logger.error(`Could not get receipt of tx: txid=${txid}`);
-      throw Errors.apiDataNotUpdated;
+      throw new Error(`getRawTransactionReceipt Something went wrong. tx doesn't have block number: ${txid}`);
     }
 
     _cacheRawTxReceipt.set(txid, receipt);
     return receipt;
   }
 
-  /**
-   * Get average network fee in wei
-   */
-  public getAvgFee(): string {
-    return Number(2 * 1e15).toString();
-  }
+  // TODO: Revive me
+  // public async getCurrencyInfo(address: string): Promise<ITokenRemake> {
+  //   const handledAddress = this.normalizeAddress(address);
+  //   try {
+  //     const contract: Contract = new web3.eth.Contract(ERC20ABI, handledAddress);
+  //     const decimal = await (contract as any).methods.decimals().call();
+  //     const symbol = (await (contract as any).methods.symbol().call()).toLowerCase();
+  //     const name = await (contract as any).methods.name().call();
+  //     const result = {
+  //       family: CCEnv.getCurrency(),
+  //       symbol,
+  //       networkSymbol: symbol,
+  //       minimumDeposit: '0.05',
+  //       type: CCEnv.getType(),
+  //       name,
+  //       decimal,
+  //       precision: 0,
+  //       contractAddress: handledAddress,
+  //       subversionName: '.*',
+  //       network: CCEnv.getNetwork(),
+  //       hasMemo: 0,
+  //     };
+  //     return result;
+  //   } catch (e) {
+  //     logger.error(e);
+  //     return null;
+  //   }
+  // }
 
-  /**
-   * Forward transaction with changed amount after subtracting fee
-   * @param privateKey
-   * @param fromAddress
-   * @param toAddress
-   * @param amount
-   */
-  public async forwardTransaction(
-    privateKey: string,
-    fromAddress: string,
-    toAddress: string,
-    amount: string
-  ): Promise<ISignedRawTransaction> {
-    const gasPrice = web3.utils.toBN(await web3.eth.getGasPrice());
-    const gasLimit = web3.utils.toBN(21000);
-    const fee = gasLimit.mul(gasPrice);
-    const forwardAmount = web3.utils
-      .toBN(amount.split('.')[0])
-      .sub(fee)
-      .toString();
-
-    return super._forwardTransaction(privateKey, fromAddress, toAddress, forwardAmount);
-  }
-
-  public getContractABI(): any {
-    return ERC20ABI;
-  }
-
-  public async getCurrencyInfo(address: string): Promise<ITokenRemake> {
-    const handledAddress = this.normalizeAddress(address);
-    try {
-      const contract: Contract = new web3.eth.Contract(this.getContractABI(), handledAddress);
-      const decimal = await (contract as any).methods.decimals().call();
-      const symbol = (await (contract as any).methods.symbol().call()).toLowerCase();
-      const name = await (contract as any).methods.name().call();
-      const result = {
-        family: getCurrency(),
-        symbol,
-        networkSymbol: symbol,
-        minimumDeposit: '0.05',
-        type: getType(),
-        name,
-        decimal,
-        precision: 0,
-        contractAddress: handledAddress,
-        subversionName: '.*',
-        network: this.getNetwork(),
-        hasMemo: 0,
-      };
-      return result;
-    } catch (e) {
-      logger.error(e);
-      return null;
-    }
+  protected _getChainId(): number {
+    throw new Error(`TODO: Implement me`);
   }
 
   /**

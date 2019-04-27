@@ -3,62 +3,48 @@ import Contract from 'web3/eth/contract';
 import { web3 } from './web3';
 import _ from 'lodash';
 import EthereumTx from 'ethereumjs-tx';
-import { override, Errors, IVOut, IRawTransaction, getTokenByContract, TokenType, getType } from 'sota-common';
+import { IRawTransaction, CCEnv, override, IErc20Token, Address, BigNumber, AccountBasedGateway } from 'sota-common';
 import Erc20Transaction from './Erc20Transaction';
+import ERC20ABI from '../config/abi/erc20.json';
 
 const gatewaysMap = new Map<string, Erc20Gateway>();
 
 export class Erc20Gateway extends EthGateway {
   @override
-  public static getInstance(contractAddress: string): Erc20Gateway {
+  public static getCustomInstance(currency: IErc20Token): Erc20Gateway {
+    const contractAddress = currency.contractAddress;
     const gw = gatewaysMap.get(contractAddress);
     if (gw) {
       return gw;
     }
 
-    const newGateway = new Erc20Gateway(contractAddress);
+    const newGateway = new Erc20Gateway(currency);
     gatewaysMap.set(contractAddress, newGateway);
     return newGateway;
   }
 
-  protected _contractAddress: string;
   protected _contract: Contract;
-  protected _tokenSymbol: string;
-  protected _tokenName: string;
-  protected _tokenDecimal: number;
-  protected _tokenTotalSupply: string;
+  protected _currency: IErc20Token;
 
-  public constructor(contractAddress: string) {
+  public constructor(currency: IErc20Token) {
     super();
-    this._contractAddress = contractAddress;
-    this._contract = new web3.eth.Contract(this.getContractABI(), contractAddress);
-    const token = getTokenByContract(getType() as TokenType, this._contractAddress);
-    if (!token) {
-      throw new Error(`Could not get ERC20 currency config: ${this._contractAddress}`);
-    }
-    this._tokenSymbol = token.symbol;
-  }
-
-  public getContractAddress(): string {
-    return this._contractAddress;
+    this._contract = new web3.eth.Contract(ERC20ABI, currency.contractAddress);
+    this._currency = currency;
   }
 
   @override
-  public async getAddressBalance(address: string): Promise<string> {
+  public async getAddressBalance(address: string): Promise<BigNumber> {
     const balance = await this._contract.methods.balanceOf(address).call();
-    return balance.toString();
+    return new BigNumber(balance.toString());
   }
 
   @override
-  public async createRawTransaction(fromAddress: string, vouts: IVOut[]): Promise<IRawTransaction> {
-    // TBD: support multiple ERC20 transfers within same transaction in the future?
-    if (vouts.length !== 1) {
-      throw new Error(`Erc20 only accepts 1 vout`);
-    }
-
-    const vout = vouts[0];
-    const toAddress = vout.toAddress;
-    const amount = web3.utils.toBN(vout.amount); // TODO: revise
+  public async constructRawTransaction(
+    fromAddress: Address,
+    toAddress: Address,
+    value: BigNumber
+  ): Promise<IRawTransaction> {
+    const amount = web3.utils.toBN(value);
     const nonce = await web3.eth.getTransactionCount(fromAddress);
     const gasPrice = web3.utils.toBN(await web3.eth.getGasPrice());
     const _gasLimit = await this._contract.methods
@@ -77,17 +63,18 @@ export class Erc20Gateway extends EthGateway {
     }
 
     if (ethBalance.lt(fee)) {
-      throw Errors.notEnoughFeeError;
+      throw new Error(
+        `Could not construct tx because of lacking fee: address=${fromAddress}, fee=${fee}, ethBalance=${ethBalance}`
+      );
     }
 
-    const chainId = parseInt(this.getConfig().chainId, 10);
     const tx = new EthereumTx({
-      chainId,
+      chainId: this._getChainId(),
       data: this._contract.methods.transfer(toAddress, amount.toString()).encodeABI(),
       gasLimit: web3.utils.toHex(gasLimit),
       gasPrice: web3.utils.toHex(gasPrice),
       nonce: web3.utils.toHex(nonce),
-      to: this._contractAddress,
+      to: this._currency.contractAddress,
       value: web3.utils.toHex(0),
     });
 
@@ -109,7 +96,7 @@ export class Erc20Gateway extends EthGateway {
     const log = _.find(
       receipt.logs,
       l =>
-        l.address.toLowerCase() === this._contractAddress.toLocaleLowerCase() &&
+        l.address.toLowerCase() === this._currency.contractAddress.toLocaleLowerCase() &&
         l.topics[0] &&
         l.topics[0] === '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'
     );
@@ -120,49 +107,26 @@ export class Erc20Gateway extends EthGateway {
       return null;
     }
 
-    const inputs = _.find(this.getContractABI(), abi => abi.type === 'event' && abi.name === 'Transfer').inputs;
+    const inputs = _.find(ERC20ABI, abi => abi.type === 'event' && abi.name === 'Transfer').inputs;
     let parsedLog;
 
     try {
       parsedLog = web3.eth.abi.decodeLog(inputs, log.data, log.topics.slice(1)) as any;
     } catch (e) {
-      throw new Error(`Cannot decode log for transaction: ${txid} of contract ${this._contractAddress}`);
+      throw new Error(`Cannot decode log for transaction: ${txid} of contract ${this._currency.contractAddress}`);
     }
 
     const txProps = {
       amount: parsedLog.value,
-      contractAddress: this._contractAddress,
+      contractAddress: this._currency.contractAddress,
       fromAddress: parsedLog.from,
       originalTx: tx,
       toAddress: parsedLog.to,
-      tokenSymbol: this._tokenSymbol,
       txid,
       isFailed: false,
     };
 
-    return new Erc20Transaction(txProps, block, receipt, blockHeight);
-  }
-
-  protected loadTokenInfo(): void {
-    (async () => {
-      const [symbol, name, decimal, totalSupply] = await Promise.all([
-        this._contract.methods.symbol().call(),
-        this._contract.methods.name().call(),
-        this._contract.methods.decimal().call(),
-        this._contract.methods.totalSupply().call(),
-      ]);
-      console.log(`Loaded gateway's token <${this._contractAddress}>: ${symbol}|${name}|${decimal}|${totalSupply}`);
-      this._tokenSymbol = symbol as string;
-      this._tokenName = name as string;
-      this._tokenDecimal = parseInt(decimal, 10);
-      this._tokenTotalSupply = totalSupply;
-    })().catch(err => {
-      console.error(`Could not load gatway's token contract: ${this._contractAddress}. Will retry in some seconds`);
-      console.error(err);
-      setTimeout(() => {
-        this.loadTokenInfo();
-      }, 1000);
-    });
+    return new Erc20Transaction(this._currency, txProps, block, receipt, blockHeight);
   }
 }
 

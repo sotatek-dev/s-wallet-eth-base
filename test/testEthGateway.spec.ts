@@ -204,7 +204,7 @@ describe('EthGateway::test-sign-raw-tx-by-singer-private-key', () => {
       amount: '10000',
     };
     const unsignedRaw = await gateway.createRawTransaction(fromAddress, [vout]);
-    const signedRaw = await gateway.signRawTxBySinglePrivateKey(unsignedRaw.unsignedRaw, privateKey);
+    const signedRaw = await gateway.signRawTxByPrivateKey(unsignedRaw.unsignedRaw, privateKey);
     assert.exists(signedRaw.txid);
   });
 });
@@ -219,7 +219,7 @@ describe('EthGateway::test-send-raw-transaction', () => {
       amount: '10000',
     };
     const unsignedRaw = await gateway.createRawTransaction(fromAddress, [vout]);
-    const signedRaw = await gateway.signRawTxBySinglePrivateKey(unsignedRaw.unsignedRaw, privateKey);
+    const signedRaw = await gateway.signRawTxByPrivateKey(unsignedRaw.unsignedRaw, privateKey);
     const sendTx = await gateway.sendRawTransaction(signedRaw.signedRaw);
     assert.exists(sendTx.txid);
   });

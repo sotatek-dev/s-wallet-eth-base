@@ -1,12 +1,18 @@
-import { Currency, BlockHeader, Transaction, TransferOutput } from 'sota-common';
+import {
+  ICurrency,
+  BlockHeader,
+  TransferEntry,
+  BigNumber,
+  implement,
+  AccountBasedTransaction,
+  CCEnv,
+  BlockchainPlatform,
+} from 'sota-common';
 import { web3 } from './web3';
 import * as web3_types from 'web3/types';
 import * as eth_types from 'web3/eth/types';
 
-export class EthTransaction extends Transaction {
-  public readonly fromAddress: string;
-  public readonly toAddress: string;
-  public readonly amount: string;
+export class EthTransaction extends AccountBasedTransaction {
   public readonly receiptStatus: boolean;
   public readonly block: BlockHeader;
   public readonly receipt: web3_types.TransactionReceipt;
@@ -18,51 +24,24 @@ export class EthTransaction extends Transaction {
     receipt: web3_types.TransactionReceipt,
     lastNetworkBlockNumber: number
   ) {
-    super(
-      {
-        confirmations: lastNetworkBlockNumber - tx.blockNumber + 1,
-        height: tx.blockNumber,
-        timestamp: block.timestamp,
-        txid: tx.hash,
-      },
-      block
-    );
+    const currency = CCEnv.getOneNativeCurrency(BlockchainPlatform.Ethereum);
+    const txProps = {
+      confirmations: lastNetworkBlockNumber - tx.blockNumber + 1,
+      height: tx.blockNumber,
+      timestamp: block.timestamp,
+      txid: tx.hash,
+      fromAddress: tx.from,
+      toAddress: tx.to,
+      amount: new BigNumber(tx.value),
+    };
 
-    this.fromAddress = tx.from;
-    this.toAddress = tx.to;
-    this.amount = tx.value;
+    super(currency, txProps, block);
+
     this.receiptStatus = receipt.status;
     this.block = block;
     this.receipt = receipt;
     this.originalTx = tx;
     this.isFailed = !this.receiptStatus;
-  }
-
-  public extractEntries(): TransferOutput[] {
-    const amount = web3.utils.toBN(this.amount);
-    if (amount.isZero()) {
-      return [];
-    }
-
-    const senderEntry = new TransferOutput({
-      amount: `-${this.amount}`,
-      currency: Currency.Ethereum,
-      subCurrency: Currency.Ethereum,
-      toAddress: this.fromAddress,
-      tx: this,
-      txid: this.txid,
-    });
-
-    const receiverEntry = new TransferOutput({
-      amount: this.amount,
-      currency: Currency.Ethereum,
-      subCurrency: Currency.Ethereum,
-      toAddress: this.toAddress,
-      tx: this,
-      txid: this.txid,
-    });
-
-    return [senderEntry, receiverEntry];
   }
 
   public getExtraDepositData(): any {
@@ -71,10 +50,34 @@ export class EthTransaction extends Transaction {
     });
   }
 
-  public getNetworkFee(): string {
+  public getNetworkFee(): BigNumber {
     const gasUsed = web3.utils.toBN(this.receipt.gasUsed);
     const gasPrice = web3.utils.toBN(this.originalTx.gasPrice);
-    return gasPrice.mul(gasUsed).toString();
+    return new BigNumber(gasPrice.mul(gasUsed).toString());
+  }
+
+  public _extractEntries(): TransferEntry[] {
+    if (this.amount.isZero()) {
+      return [];
+    }
+
+    const senderEntry = new TransferEntry({
+      currency: this.currency,
+      amount: this.amount.times(-1),
+      address: this.fromAddress,
+      tx: this,
+      txid: this.txid,
+    });
+
+    const receiverEntry = new TransferEntry({
+      currency: this.currency,
+      amount: this.amount,
+      address: this.toAddress,
+      tx: this,
+      txid: this.txid,
+    });
+
+    return [senderEntry, receiverEntry];
   }
 }
 
