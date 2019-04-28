@@ -55,30 +55,6 @@ export class EthTransaction extends AccountBasedTransaction {
     const gasPrice = web3.utils.toBN(this.originalTx.gasPrice);
     return new BigNumber(gasPrice.mul(gasUsed).toString());
   }
-
-  public _extractEntries(): TransferEntry[] {
-    if (this.amount.isZero()) {
-      return [];
-    }
-
-    const senderEntry = new TransferEntry({
-      currency: this.currency,
-      amount: this.amount.times(-1),
-      address: this.fromAddress,
-      tx: this,
-      txid: this.txid,
-    });
-
-    const receiverEntry = new TransferEntry({
-      currency: this.currency,
-      amount: this.amount,
-      address: this.toAddress,
-      tx: this,
-      txid: this.txid,
-    });
-
-    return [senderEntry, receiverEntry];
-  }
 }
 
 export default EthTransaction;
