@@ -1,13 +1,4 @@
-import {
-  ICurrency,
-  BlockHeader,
-  TransferEntry,
-  BigNumber,
-  implement,
-  AccountBasedTransaction,
-  CCEnv,
-  BlockchainPlatform,
-} from 'sota-common';
+import { BlockHeader, BigNumber, AccountBasedTransaction, BlockchainPlatform, CurrencyRegistry } from 'sota-common';
 import { web3 } from './web3';
 import * as web3_types from 'web3/types';
 import * as eth_types from 'web3/eth/types';
@@ -24,7 +15,7 @@ export class EthTransaction extends AccountBasedTransaction {
     receipt: web3_types.TransactionReceipt,
     lastNetworkBlockNumber: number
   ) {
-    const currency = CCEnv.getOneNativeCurrency(BlockchainPlatform.Ethereum);
+    const currency = CurrencyRegistry.getOneNativeCurrency(BlockchainPlatform.Ethereum);
     const txProps = {
       confirmations: lastNetworkBlockNumber - tx.blockNumber + 1,
       height: tx.blockNumber,

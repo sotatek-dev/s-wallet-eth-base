@@ -1,4 +1,11 @@
-import { BaseGateway, getLogger, CCEnv, CustomAssetCrawler, IErc20Token, ICrawlerOptions } from 'sota-common';
+import {
+  BaseGateway,
+  getLogger,
+  CustomAssetCrawler,
+  IErc20Token,
+  ICrawlerOptions,
+  CurrencyRegistry,
+} from 'sota-common';
 import Erc20Gateway from './Erc20Gateway';
 import EthGateway from './EthGateway';
 
@@ -6,7 +13,7 @@ const logger = getLogger('Erc20Crawler');
 
 export class Erc20Crawler extends CustomAssetCrawler {
   constructor(options: ICrawlerOptions) {
-    const erc20Tokens: IErc20Token[] = CCEnv.getAllErc20Tokens();
+    const erc20Tokens: IErc20Token[] = CurrencyRegistry.getAllErc20Tokens();
     super(erc20Tokens, options);
   }
 

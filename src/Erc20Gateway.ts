@@ -3,7 +3,7 @@ import Contract from 'web3/eth/contract';
 import { web3 } from './web3';
 import _ from 'lodash';
 import EthereumTx from 'ethereumjs-tx';
-import { IRawTransaction, CCEnv, override, IErc20Token, Address, BigNumber, AccountBasedGateway } from 'sota-common';
+import { IRawTransaction, override, IErc20Token, Address, BigNumber } from 'sota-common';
 import Erc20Transaction from './Erc20Transaction';
 import ERC20ABI from '../config/abi/erc20.json';
 

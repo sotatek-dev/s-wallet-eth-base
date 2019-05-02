@@ -12,11 +12,11 @@ import {
   TransactionStatus,
   override,
   Utils,
-  CCEnv,
   BlockchainPlatform,
   Address,
   BigNumber,
   implement,
+  CurrencyRegistry,
 } from 'sota-common';
 import LRU from 'lru-cache';
 import { EthTransaction } from './EthTransaction';
@@ -53,7 +53,7 @@ export class EthGateway extends AccountBasedGateway {
   }
 
   public constructor() {
-    const currency = CCEnv.getOneNativeCurrency(BlockchainPlatform.Ethereum);
+    const currency = CurrencyRegistry.getOneNativeCurrency(BlockchainPlatform.Ethereum);
     super(currency);
 
     // TODO: FIXME
@@ -259,7 +259,7 @@ export class EthGateway extends AccountBasedGateway {
       return TransactionStatus.UNKNOWN;
     }
 
-    if (tx.confirmations < CCEnv.getCurrencyConfig(this._currency).requiredConfirmations) {
+    if (tx.confirmations < CurrencyRegistry.getCurrencyConfig(this._currency).requiredConfirmations) {
       return TransactionStatus.CONFIRMING;
     }
 
