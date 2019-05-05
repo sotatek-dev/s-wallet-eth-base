@@ -10,7 +10,6 @@ import ERC20ABI from '../config/abi/erc20.json';
 const gatewaysMap = new Map<string, Erc20Gateway>();
 
 export class Erc20Gateway extends EthGateway {
-  @override
   public static getCustomInstance(currency: IErc20Token): Erc20Gateway {
     const contractAddress = currency.contractAddress;
     const gw = gatewaysMap.get(contractAddress);

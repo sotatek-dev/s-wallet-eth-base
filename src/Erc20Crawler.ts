@@ -14,7 +14,7 @@ const logger = getLogger('Erc20Crawler');
 export class Erc20Crawler extends CustomAssetCrawler {
   constructor(options: ICrawlerOptions) {
     const erc20Tokens: IErc20Token[] = CurrencyRegistry.getAllErc20Tokens();
-    super(erc20Tokens, options);
+    super(options, erc20Tokens);
   }
 
   public getPlatformGateway(): BaseGateway {

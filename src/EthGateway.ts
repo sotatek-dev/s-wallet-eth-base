@@ -12,7 +12,6 @@ import {
   TransactionStatus,
   override,
   Utils,
-  BlockchainPlatform,
   Address,
   BigNumber,
   implement,
@@ -53,15 +52,8 @@ export class EthGateway extends AccountBasedGateway {
   }
 
   public constructor() {
-    const currency = CurrencyRegistry.getOneNativeCurrency(BlockchainPlatform.Ethereum);
+    const currency = CurrencyRegistry.Ethereum;
     super(currency);
-
-    // TODO: FIXME
-    // if (!this.getConfig().apiEndpoint) {
-    //   throw new Error(`Invalid ETH http provider endpoint`);
-    // }
-
-    // web3.setProvider(new Web3.providers.HttpProvider(this.getConfig().apiEndpoint));
   }
 
   /**
