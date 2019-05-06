@@ -5,6 +5,7 @@ import {
   IErc20Token,
   ICrawlerOptions,
   CurrencyRegistry,
+  GatewayRegistry,
 } from 'sota-common';
 import Erc20Gateway from './Erc20Gateway';
 import EthGateway from './EthGateway';
@@ -17,12 +18,12 @@ export class Erc20Crawler extends CustomAssetCrawler {
     super(options, erc20Tokens);
   }
 
-  public getPlatformGateway(): BaseGateway {
-    return EthGateway.getInstance();
+  public getPlatformGateway(): EthGateway {
+    return GatewayRegistry.getGatewayInstance(CurrencyRegistry.Ethereum) as EthGateway;
   }
 
-  public getGateway(currency: IErc20Token): Erc20Gateway {
-    return Erc20Gateway.getCustomInstance(currency);
+  public getGateway(token: IErc20Token): Erc20Gateway {
+    return GatewayRegistry.getGatewayInstance(token) as Erc20Gateway;
   }
 }
 

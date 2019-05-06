@@ -16,7 +16,6 @@
     "ethereumjs-tx": "1.3.7",
     "lodash": "4.17.11",
     "sota-common": "../sota-common",
-    "wallet-core": "../wallet-core",
     "web3": "1.0.0-beta.37",
     "lru-cache": "5.1.1",
     "@types/lru-cache": "5.1.0"

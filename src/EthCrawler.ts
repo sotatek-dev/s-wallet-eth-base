@@ -1,8 +1,8 @@
-import { NativeAssetCrawler } from 'sota-common';
+import { NativeAssetCrawler, GatewayRegistry, CurrencyRegistry } from 'sota-common';
 import EthGateway from './EthGateway';
 
 export class EthCrawler extends NativeAssetCrawler {
   public getPlatformGateway(): EthGateway {
-    return EthGateway.getInstance();
+    return GatewayRegistry.getGatewayInstance(CurrencyRegistry.Ethereum) as EthGateway;
   }
 }

@@ -3,32 +3,38 @@ import Contract from 'web3/eth/contract';
 import { web3 } from './web3';
 import _ from 'lodash';
 import EthereumTx from 'ethereumjs-tx';
-import { IRawTransaction, override, IErc20Token, Address, BigNumber } from 'sota-common';
+import {
+  IRawTransaction,
+  override,
+  IErc20Token,
+  Account,
+  Address,
+  BigNumber,
+  CurrencyRegistry,
+  GatewayRegistry,
+  AccountBasedGateway,
+  Block,
+  ISignedRawTransaction,
+  TransactionStatus,
+  ISubmittedTransaction,
+} from 'sota-common';
 import Erc20Transaction from './Erc20Transaction';
 import ERC20ABI from '../config/abi/erc20.json';
 
-const gatewaysMap = new Map<string, Erc20Gateway>();
+CurrencyRegistry.onERC20TokenRegistered((token: IErc20Token) => {
+  const gateway = new Erc20Gateway(token);
+  GatewayRegistry.registerGateway(token, gateway);
+});
 
-export class Erc20Gateway extends EthGateway {
-  public static getCustomInstance(currency: IErc20Token): Erc20Gateway {
-    const contractAddress = currency.contractAddress;
-    const gw = gatewaysMap.get(contractAddress);
-    if (gw) {
-      return gw;
-    }
-
-    const newGateway = new Erc20Gateway(currency);
-    gatewaysMap.set(contractAddress, newGateway);
-    return newGateway;
-  }
-
+export class Erc20Gateway extends AccountBasedGateway {
   protected _contract: Contract;
   protected _currency: IErc20Token;
+  protected _ethGateway: EthGateway;
 
   public constructor(currency: IErc20Token) {
-    super();
+    super(currency);
     this._contract = new web3.eth.Contract(ERC20ABI, currency.contractAddress);
-    this._currency = currency;
+    this._ethGateway = GatewayRegistry.getGatewayInstance(CurrencyRegistry.Ethereum) as EthGateway;
   }
 
   @override
@@ -68,7 +74,7 @@ export class Erc20Gateway extends EthGateway {
     }
 
     const tx = new EthereumTx({
-      chainId: this._getChainId(),
+      chainId: this._ethGateway.getChainId(),
       data: this._contract.methods.transfer(toAddress, amount.toString()).encodeABI(),
       gasLimit: web3.utils.toHex(gasLimit),
       gasPrice: web3.utils.toHex(gasPrice),
@@ -83,12 +89,32 @@ export class Erc20Gateway extends EthGateway {
     };
   }
 
+  public async signRawTransaction(unsignedRaw: string, secret: string): Promise<ISignedRawTransaction> {
+    throw new Error('Method not implemented.');
+  }
+
+  public async sendRawTransaction(signedRawTx: string): Promise<ISubmittedTransaction> {
+    throw new Error('Method not implemented.');
+  }
+
+  public async createAccountAsync(): Promise<Account> {
+    return this._ethGateway.createAccountAsync();
+  }
+
+  public async getBlockCount(): Promise<number> {
+    return this._ethGateway.getBlockCount();
+  }
+
+  public getTransactionStatus(txid: string): Promise<TransactionStatus> {
+    return this._ethGateway.getTransactionStatus(txid);
+  }
+
   @override
   protected async _getOneTransaction(txid: string): Promise<Erc20Transaction> {
-    const tx = await this.getRawTransaction(txid);
+    const tx = await this._ethGateway.getRawTransaction(txid);
     const [block, receipt, blockHeight] = await Promise.all([
       this.getOneBlock(tx.blockNumber),
-      this.getRawTransactionReceipt(txid),
+      this._ethGateway.getRawTransactionReceipt(txid),
       this.getBlockCount(),
     ]);
 
@@ -116,7 +142,7 @@ export class Erc20Gateway extends EthGateway {
     }
 
     const txProps = {
-      amount: parsedLog.value,
+      amount: new BigNumber(parsedLog.value),
       contractAddress: this._currency.contractAddress,
       fromAddress: parsedLog.from,
       originalTx: tx,
@@ -126,6 +152,16 @@ export class Erc20Gateway extends EthGateway {
     };
 
     return new Erc20Transaction(this._currency, txProps, block, receipt, blockHeight);
+  }
+
+  /**
+   * Get block details in application-specified format
+   *
+   * @param {string|number} blockHash: the block hash (or block number in case the parameter is Number)
+   * @returns {Block} block: the block detail
+   */
+  protected async _getOneBlock(blockNumber: string | number): Promise<Block> {
+    return this._ethGateway.getOneBlock(blockNumber);
   }
 }
 

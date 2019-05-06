@@ -16,6 +16,8 @@ import {
   BigNumber,
   implement,
   CurrencyRegistry,
+  ICurrency,
+  GatewayRegistry,
 } from 'sota-common';
 import LRU from 'lru-cache';
 import { EthTransaction } from './EthTransaction';
@@ -40,20 +42,14 @@ const _cacheRawTxReceipt: LRU<string, web3_types2.TransactionReceipt> = new LRU(
 const _isRequestingTx: Map<string, boolean> = new Map<string, boolean>();
 const _isRequestingReceipt: Map<string, boolean> = new Map<string, boolean>();
 
-let instance: EthGateway = null;
+CurrencyRegistry.onSpecificCurrencyRegistered(CurrencyRegistry.Ethereum, () => {
+  const gateway = new EthGateway();
+  GatewayRegistry.registerGateway(CurrencyRegistry.Ethereum, gateway);
+});
+
 export class EthGateway extends AccountBasedGateway {
-  @override
-  public static getInstance(): EthGateway {
-    if (!instance) {
-      instance = new EthGateway();
-    }
-
-    return instance;
-  }
-
   public constructor() {
-    const currency = CurrencyRegistry.Ethereum;
-    super(currency);
+    super(CurrencyRegistry.Ethereum);
   }
 
   /**
@@ -149,7 +145,7 @@ export class EthGateway extends AccountBasedGateway {
     }
 
     const tx = new EthereumTx({
-      chainId: this._getChainId(),
+      chainId: this.getChainId(),
       data: '',
       gasLimit: web3.utils.toHex(21000),
       gasPrice: web3.utils.toHex(gasPrice),
@@ -246,7 +242,7 @@ export class EthGateway extends AccountBasedGateway {
       txid = '0x' + txid;
     }
 
-    const tx = (await EthGateway.getInstance().getOneTransaction(txid)) as EthTransaction;
+    const tx = (await this.getOneTransaction(txid)) as EthTransaction;
     if (!tx) {
       return TransactionStatus.UNKNOWN;
     }
@@ -340,7 +336,7 @@ export class EthGateway extends AccountBasedGateway {
   //   }
   // }
 
-  protected _getChainId(): number {
+  public getChainId(): number {
     throw new Error(`TODO: Implement me`);
   }
 
