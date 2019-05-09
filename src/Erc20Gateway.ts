@@ -17,11 +17,16 @@ import {
   ISignedRawTransaction,
   TransactionStatus,
   ISubmittedTransaction,
+  getLogger,
+  implement,
 } from 'sota-common';
 import Erc20Transaction from './Erc20Transaction';
 import ERC20ABI from '../config/abi/erc20.json';
 
+const logger = getLogger('Erc20Gateway');
+
 CurrencyRegistry.onERC20TokenRegistered((token: IErc20Token) => {
+  logger.info(`Register Erc20Gateway to the registry: ${token.symbol}`);
   const gateway = new Erc20Gateway(token);
   GatewayRegistry.registerGateway(token, gateway);
 });
@@ -37,13 +42,13 @@ export class Erc20Gateway extends AccountBasedGateway {
     this._ethGateway = GatewayRegistry.getGatewayInstance(CurrencyRegistry.Ethereum) as EthGateway;
   }
 
-  @override
+  @implement
   public async getAddressBalance(address: string): Promise<BigNumber> {
     const balance = await this._contract.methods.balanceOf(address).call();
     return new BigNumber(balance.toString());
   }
 
-  @override
+  @implement
   public async constructRawTransaction(
     fromAddress: Address,
     toAddress: Address,
@@ -109,7 +114,6 @@ export class Erc20Gateway extends AccountBasedGateway {
     return this._ethGateway.getTransactionStatus(txid);
   }
 
-  @override
   protected async _getOneTransaction(txid: string): Promise<Erc20Transaction> {
     const tx = await this._ethGateway.getRawTransaction(txid);
     const [block, receipt, blockHeight] = await Promise.all([

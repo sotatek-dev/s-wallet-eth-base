@@ -43,6 +43,7 @@ const _isRequestingTx: Map<string, boolean> = new Map<string, boolean>();
 const _isRequestingReceipt: Map<string, boolean> = new Map<string, boolean>();
 
 CurrencyRegistry.onSpecificCurrencyRegistered(CurrencyRegistry.Ethereum, () => {
+  logger.info(`Register EthGateway to the registry`);
   const gateway = new EthGateway();
   GatewayRegistry.registerGateway(CurrencyRegistry.Ethereum, gateway);
 });
