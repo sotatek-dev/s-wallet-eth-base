@@ -5,7 +5,6 @@ import _ from 'lodash';
 import EthereumTx from 'ethereumjs-tx';
 import {
   IRawTransaction,
-  override,
   IErc20Token,
   Account,
   Address,

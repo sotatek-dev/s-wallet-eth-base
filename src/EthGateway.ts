@@ -16,13 +16,16 @@ import {
   BigNumber,
   implement,
   CurrencyRegistry,
-  ICurrency,
   GatewayRegistry,
+  IErc20Token,
+  TokenType,
+  BlockchainPlatform,
 } from 'sota-common';
 import LRU from 'lru-cache';
 import { EthTransaction } from './EthTransaction';
 import * as EthTypeConverter from './EthTypeConverter';
 import { web3 } from './web3';
+import ERC20ABI from '../config/abi/erc20.json';
 import EthereumTx from 'ethereumjs-tx';
 
 const logger = getLogger('EthGateway');
@@ -42,11 +45,7 @@ const _cacheRawTxReceipt: LRU<string, web3_types2.TransactionReceipt> = new LRU(
 const _isRequestingTx: Map<string, boolean> = new Map<string, boolean>();
 const _isRequestingReceipt: Map<string, boolean> = new Map<string, boolean>();
 
-CurrencyRegistry.onSpecificCurrencyRegistered(CurrencyRegistry.Ethereum, () => {
-  logger.info(`Register EthGateway to the registry`);
-  const gateway = new EthGateway();
-  GatewayRegistry.registerGateway(CurrencyRegistry.Ethereum, gateway);
-});
+GatewayRegistry.registerLazyCreateMethod(CurrencyRegistry.Ethereum, () => new EthGateway());
 
 export class EthGateway extends AccountBasedGateway {
   public constructor() {
@@ -308,34 +307,35 @@ export class EthGateway extends AccountBasedGateway {
     return receipt;
   }
 
-  // TODO: Revive me
-  // public async getCurrencyInfo(address: string): Promise<ITokenRemake> {
-  //   const handledAddress = this.normalizeAddress(address);
-  //   try {
-  //     const contract: Contract = new web3.eth.Contract(ERC20ABI, handledAddress);
-  //     const decimal = await (contract as any).methods.decimals().call();
-  //     const symbol = (await (contract as any).methods.symbol().call()).toLowerCase();
-  //     const name = await (contract as any).methods.name().call();
-  //     const result = {
-  //       family: CCEnv.getCurrency(),
-  //       symbol,
-  //       networkSymbol: symbol,
-  //       minimumDeposit: '0.05',
-  //       type: CCEnv.getType(),
-  //       name,
-  //       decimal,
-  //       precision: 0,
-  //       contractAddress: handledAddress,
-  //       subversionName: '.*',
-  //       network: CCEnv.getNetwork(),
-  //       hasMemo: 0,
-  //     };
-  //     return result;
-  //   } catch (e) {
-  //     logger.error(e);
-  //     return null;
-  //   }
-  // }
+  public async getErc20TokenInfo(contractAddress: string): Promise<IErc20Token> {
+    contractAddress = this.normalizeAddress(contractAddress);
+    try {
+      const contract = new web3.eth.Contract(ERC20ABI, contractAddress);
+      const [networkSymbol, name, decimals] = await Promise.all([
+        contract.methods.symbol().call(),
+        contract.methods.name().call(),
+        contract.methods.decimals().call(),
+      ]);
+
+      const symbol = [TokenType.ERC20, contractAddress].join('.');
+
+      return {
+        symbol,
+        networkSymbol: networkSymbol.toLowerCase(),
+        tokenType: TokenType.ERC20,
+        name,
+        platform: BlockchainPlatform.Ethereum,
+        isNative: false,
+        contractAddress,
+        decimals,
+        scale: 0,
+      };
+    } catch (e) {
+      logger.error(`EthGateway::getErc20TokenInfo could not get info contract=${contractAddress} due to error:`);
+      logger.error(e);
+      return null;
+    }
+  }
 
   public getChainId(): number {
     throw new Error(`TODO: Implement me`);
