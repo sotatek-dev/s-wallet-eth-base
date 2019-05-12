@@ -10,7 +10,7 @@ export class EthWebServer extends BaseWebServer {
   }
 
   protected async getERC20TokenInfo(req: any, res: any) {
-    const contractAddress = req.params.contractAddress;
+    const contractAddress = req.params.contract_address;
     const gateway = (await this.getGateway(this._currency.symbol)) as EthGateway;
     const tokenInfo = await gateway.getErc20TokenInfo(contractAddress);
     res.json(tokenInfo);
@@ -20,7 +20,7 @@ export class EthWebServer extends BaseWebServer {
   protected setup() {
     super.setup();
 
-    this.app.get('/api/currency_config/:address', async (req, res) => {
+    this.app.get('/api/currency_config/:contract_address', async (req, res) => {
       try {
         await this.getERC20TokenInfo(req, res);
       } catch (e) {
