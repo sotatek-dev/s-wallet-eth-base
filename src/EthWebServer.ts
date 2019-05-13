@@ -1,5 +1,5 @@
 import util from 'util';
-import { BaseWebServer, BlockchainPlatform, override, getLogger } from 'sota-common';
+import { BaseWebServer, BlockchainPlatform, override, getLogger, EnvConfigRegistry } from 'sota-common';
 import EthGateway from './EthGateway';
 
 const logger = getLogger('EthWebServer');
@@ -13,7 +13,8 @@ export class EthWebServer extends BaseWebServer {
     const contractAddress = req.params.contract_address;
     const gateway = (await this.getGateway(this._currency.symbol)) as EthGateway;
     const tokenInfo = await gateway.getErc20TokenInfo(contractAddress);
-    res.json(tokenInfo);
+    const result = Object.assign({}, tokenInfo, { network: EnvConfigRegistry.getNetwork() });
+    res.json(result);
   }
 
   @override
