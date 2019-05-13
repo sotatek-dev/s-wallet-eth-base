@@ -111,7 +111,9 @@ export class EthGateway extends AccountBasedGateway {
     }
 
     _cacheBlockNumber.isRequesting = true;
-    const blockNum = await web3.eth.getBlockNumber();
+    // Since there're some cases that newest block is not fully broadcasted to the network
+    // We decrease latest block number by 1 for safety
+    const blockNum = (await web3.eth.getBlockNumber()) - 1;
     const newUpdatedAt = Utils.nowInMillis();
     _cacheBlockNumber.value = blockNum;
     _cacheBlockNumber.updatedAt = newUpdatedAt;
