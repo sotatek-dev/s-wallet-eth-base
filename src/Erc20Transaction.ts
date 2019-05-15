@@ -1,12 +1,4 @@
-import {
-  BlockHeader,
-  TransferEntry,
-  AccountBasedTransaction,
-  IErc20Token,
-  BigNumber,
-  Address,
-  implement,
-} from 'sota-common';
+import { BlockHeader, AccountBasedTransaction, IErc20Token, BigNumber, Address } from 'sota-common';
 import * as web3_types from 'web3/types';
 import * as eth_types from 'web3/eth/types';
 import { web3 } from './web3';

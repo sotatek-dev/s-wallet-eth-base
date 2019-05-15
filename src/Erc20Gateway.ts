@@ -93,12 +93,14 @@ export class Erc20Gateway extends AccountBasedGateway {
     };
   }
 
+  // Wrap ETH gateway
   public async signRawTransaction(unsignedRaw: string, secret: string): Promise<ISignedRawTransaction> {
-    throw new Error('Method not implemented.');
+    return this._ethGateway.signRawTransaction(unsignedRaw, secret);
   }
 
+  // Wrap ETH gateway
   public async sendRawTransaction(signedRawTx: string): Promise<ISubmittedTransaction> {
-    throw new Error('Method not implemented.');
+    return this._ethGateway.sendRawTransaction(signedRawTx);
   }
 
   public async createAccountAsync(): Promise<Account> {
