@@ -123,7 +123,7 @@ export class EthGateway extends AccountBasedGateway {
   }
 
   /**
-   * createRawTransaction construct raw transaction data without signature
+   * constructRawTransaction construct raw transaction data without signature
    */
   @implement
   public async constructRawTransaction(
@@ -328,6 +328,7 @@ export class EthGateway extends AccountBasedGateway {
         name,
         platform: BlockchainPlatform.Ethereum,
         isNative: false,
+        isUTXOBased: false,
         contractAddress,
         decimals,
         scale: 0,
