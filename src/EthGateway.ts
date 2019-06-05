@@ -74,6 +74,10 @@ export class EthGateway extends AccountBasedGateway {
     return web3.eth.accounts.create();
   }
 
+  public async getAccountFromPrivateKey(privateKey: string): Promise<web3_accounts.Account> {
+    return web3.eth.accounts.privateKeyToAccount(privateKey);
+  }
+
   /**
    * Check whether an address is valid
    * @param address
