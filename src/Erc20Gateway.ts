@@ -41,6 +41,10 @@ export class Erc20Gateway extends AccountBasedGateway {
     this._ethGateway = GatewayRegistry.getGatewayInstance(CurrencyRegistry.Ethereum) as EthGateway;
   }
 
+  public async getAverageSeedingFee(): Promise<BigNumber> {
+    throw new Error('Method not implemented.');
+  }
+
   @implement
   public async getAddressBalance(address: string): Promise<BigNumber> {
     const balance = await this._contract.methods.balanceOf(address).call();
