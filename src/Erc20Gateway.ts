@@ -26,8 +26,7 @@ const logger = getLogger('Erc20Gateway');
 
 CurrencyRegistry.onERC20TokenRegistered((token: IErc20Token) => {
   logger.info(`Register Erc20Gateway to the registry: ${token.symbol}`);
-  const gateway = new Erc20Gateway(token);
-  GatewayRegistry.registerGateway(token, gateway);
+  GatewayRegistry.registerLazyCreateMethod(token, () => new Erc20Gateway(token));
 });
 
 export class Erc20Gateway extends AccountBasedGateway {
@@ -109,6 +108,10 @@ export class Erc20Gateway extends AccountBasedGateway {
 
   public async createAccountAsync(): Promise<Account> {
     return this._ethGateway.createAccountAsync();
+  }
+
+  public async getAccountFromPrivateKey(privateKey: string): Promise<Account> {
+    return this._ethGateway.getAccountFromPrivateKey(privateKey);
   }
 
   public async getBlockCount(): Promise<number> {
