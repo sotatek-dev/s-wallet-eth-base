@@ -75,6 +75,14 @@ export class EthGateway extends AccountBasedGateway {
   }
 
   public async getAccountFromPrivateKey(privateKey: string): Promise<web3_accounts.Account> {
+    if (privateKey.indexOf('0x') < 0) {
+      privateKey = '0x' + privateKey;
+    }
+
+    if (privateKey.length !== 66) {
+      throw new Error(`Invalid private key. Should be 64-byte length.`);
+    }
+
     return web3.eth.accounts.privateKeyToAccount(privateKey);
   }
 
