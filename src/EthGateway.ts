@@ -144,7 +144,7 @@ export class EthGateway extends AccountBasedGateway {
     fromAddress: Address,
     toAddress: Address,
     value: BigNumber,
-    isNative: boolean = false
+    isConsolidate: boolean = false
   ): Promise<IRawTransaction> {
     let amount = web3.utils.toBN(value);
     const nonce = await web3.eth.getTransactionCount(fromAddress);
@@ -152,7 +152,7 @@ export class EthGateway extends AccountBasedGateway {
     const gasLimit = web3.utils.toBN(21000); // For ETH transaction 21000 gas is fixed
     const fee = gasLimit.mul(gasPrice);
 
-    if (isNative) {
+    if (isConsolidate) {
       amount = amount.sub(fee);
     }
 
