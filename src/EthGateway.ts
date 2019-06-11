@@ -52,6 +52,16 @@ export class EthGateway extends AccountBasedGateway {
     super(CurrencyRegistry.Ethereum);
   }
 
+  public async getAverageSeedingFee(): Promise<BigNumber> {
+    const gasPrice = web3.utils.toBN(await web3.eth.getGasPrice());
+    const gasLimit = web3.utils.toBN(150000); // For ETH transaction 21000 gas is fixed
+    const result = gasPrice
+      .mul(gasLimit)
+      .mul(web3.utils.toBN(15))
+      .div(web3.utils.toBN(10));
+    return new BigNumber(result.toString());
+  }
+
   /**
    * Handle more at extended classes
    * @param address
@@ -141,13 +151,18 @@ export class EthGateway extends AccountBasedGateway {
   public async constructRawTransaction(
     fromAddress: Address,
     toAddress: Address,
-    value: BigNumber
+    value: BigNumber,
+    isConsolidate: boolean = false
   ): Promise<IRawTransaction> {
-    const amount = web3.utils.toBN(value);
+    let amount = web3.utils.toBN(value);
     const nonce = await web3.eth.getTransactionCount(fromAddress);
     const gasPrice = web3.utils.toBN(await web3.eth.getGasPrice());
     const gasLimit = web3.utils.toBN(21000); // For ETH transaction 21000 gas is fixed
     const fee = gasLimit.mul(gasPrice);
+
+    if (isConsolidate) {
+      amount = amount.sub(fee);
+    }
 
     // Check whether the balance of hot wallet is enough to send
     const balance = web3.utils.toBN((await web3.eth.getBalance(fromAddress)).toString());
@@ -354,7 +369,8 @@ export class EthGateway extends AccountBasedGateway {
   }
 
   public getChainId(): number {
-    throw new Error(`TODO: Implement me`);
+    const config = CurrencyRegistry.getCurrencyConfig(this._currency);
+    return Number(config.chainId);
   }
 
   /**
