@@ -20,6 +20,7 @@ import {
   IErc20Token,
   TokenType,
   BlockchainPlatform,
+  Transactions,
 } from 'sota-common';
 import LRU from 'lru-cache';
 import { EthTransaction } from './EthTransaction';
@@ -27,6 +28,8 @@ import * as EthTypeConverter from './EthTypeConverter';
 import { web3 } from './web3';
 import ERC20ABI from '../config/abi/erc20.json';
 import EthereumTx from 'ethereumjs-tx';
+import pLimit from 'p-limit';
+const limit = pLimit(100);
 
 const logger = getLogger('EthGateway');
 const _cacheBlockNumber = {
@@ -51,7 +54,27 @@ export class EthGateway extends AccountBasedGateway {
   public constructor() {
     super(CurrencyRegistry.Ethereum);
   }
+  public async getTransactionsByIds(txids: string[]): Promise<Transactions> {
+    const result = new Transactions();
+    if (!txids || !txids.length) {
+      return result;
+    }
 
+    const getOneTx = async (txid: string) => {
+      const tx = await this.getOneTransaction(txid);
+      if (tx) {
+        result.push(tx);
+      }
+    };
+
+    await Utils.PromiseAll(
+      txids.map(async txid => {
+        return limit(() => getOneTx(txid));
+      })
+    );
+
+    return result;
+  }
   public async getAverageSeedingFee(): Promise<BigNumber> {
     const gasPrice = web3.utils.toBN(await web3.eth.getGasPrice());
     const gasLimit = web3.utils.toBN(150000); // For ETH transaction 21000 gas is fixed
