@@ -20,6 +20,7 @@ import {
   IErc20Token,
   TokenType,
   BlockchainPlatform,
+  Transactions,
 } from 'sota-common';
 import LRU from 'lru-cache';
 import { EthTransaction } from './EthTransaction';
@@ -50,6 +51,10 @@ GatewayRegistry.registerLazyCreateMethod(CurrencyRegistry.Ethereum, () => new Et
 export class EthGateway extends AccountBasedGateway {
   public constructor() {
     super(CurrencyRegistry.Ethereum);
+  }
+
+  public getParallelNetworkRequestLimit() {
+    return 100;
   }
 
   public async getAverageSeedingFee(): Promise<BigNumber> {
