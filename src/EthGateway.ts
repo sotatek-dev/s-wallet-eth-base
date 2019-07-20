@@ -310,8 +310,10 @@ export class EthGateway extends AccountBasedGateway {
     if (!tx) {
       return null;
     }
+
     if (!tx.blockNumber) {
-      throw new Error(`getRawTransaction Something went wrong. tx doesn't have block number: ${txid}`);
+      const gwName = this.constructor.name;
+      throw new Error(`${gwName}::getRawTransaction tx doesn't have block number txid=${txid}`);
     }
 
     _cacheRawTxByHash.set(txid, tx);
@@ -333,8 +335,8 @@ export class EthGateway extends AccountBasedGateway {
     const receipt = await web3.eth.getTransactionReceipt(txid);
     _isRequestingReceipt.delete(txid);
     if (!receipt) {
-      logger.error(`Could not get receipt of tx: txid=${txid}`);
-      throw new Error(`getRawTransactionReceipt Something went wrong. tx doesn't have block number: ${txid}`);
+      const gwName = this.constructor.name;
+      throw new Error(`${gwName}::getRawTransactionReceipt could not get receipt txid=${txid}`);
     }
 
     _cacheRawTxReceipt.set(txid, receipt);
