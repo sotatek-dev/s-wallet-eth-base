@@ -181,7 +181,7 @@ export class EthGateway extends AccountBasedGateway {
     const tx = new EthereumTx({
       chainId: this.getChainId(),
       data: '',
-      gasLimit: web3.utils.toHex(21000),
+      gasLimit: web3.utils.toHex(150000),
       gasPrice: web3.utils.toHex(gasPrice),
       nonce: web3.utils.toHex(nonce),
       to: toAddress,
