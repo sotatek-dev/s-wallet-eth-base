@@ -163,7 +163,7 @@ export class EthGateway extends AccountBasedGateway {
     let amount = web3.utils.toBN(value);
     const nonce = await web3.eth.getTransactionCount(fromAddress);
     const gasPrice = web3.utils.toBN(await web3.eth.getGasPrice());
-    const gasLimit = web3.utils.toBN(21000); // For ETH transaction 21000 gas is fixed
+    const gasLimit = web3.utils.toBN(150000); // Maximum gas allow for Ethereum transaction
     const fee = gasLimit.mul(gasPrice);
 
     if (isConsolidate) {
@@ -182,7 +182,7 @@ export class EthGateway extends AccountBasedGateway {
     const tx = new EthereumTx({
       chainId: this.getChainId(),
       data: '',
-      gasLimit: web3.utils.toHex(21000),
+      gasLimit: web3.utils.toHex(150000),
       gasPrice: web3.utils.toHex(gasPrice),
       nonce: web3.utils.toHex(nonce),
       to: toAddress,
@@ -234,35 +234,41 @@ export class EthGateway extends AccountBasedGateway {
    * @param {String} rawTx: the hex-encoded transaction data
    * @returns {String}: the transaction hash in hex
    */
-  public async sendRawTransaction(rawTx: string): Promise<ISubmittedTransaction> {
+  public async sendRawTransaction(rawTx: string, retryCount?: number): Promise<ISubmittedTransaction> {
     if (!rawTx.startsWith('0x')) {
       rawTx = '0x' + rawTx;
     }
 
+    const ethTx = new EthereumTx(rawTx);
+    let txid = ethTx.hash().toString('hex');
+    if (!txid.startsWith('0x')) {
+      txid = '0x' + txid;
+    }
+
+    if (!retryCount || isNaN(retryCount)) {
+      retryCount = 0;
+    }
+
     try {
       const receipt = await web3.eth.sendSignedTransaction(rawTx);
-      return {
-        txid: receipt.transactionHash,
-      };
+      return { txid: receipt.transactionHash };
     } catch (e) {
       if (e.toString().indexOf('known transaction') > -1) {
         logger.warn(e.toString());
-        return null;
+        return { txid };
       }
 
       if (e.toString().indexOf('Transaction has been reverted by the EVM') > -1) {
         logger.warn(e.toString());
-        const ethTx = new EthereumTx(rawTx);
-        let txid = ethTx.hash().toString('hex');
-        if (!txid.startsWith('0x')) {
-          txid = '0x' + txid;
-        }
-        return {
-          txid,
-        };
+        return { txid };
       }
 
-      throw e;
+      if (retryCount + 1 > 5) {
+        logger.fatal(`Too many fails sending txid=${txid} tx=${JSON.stringify(ethTx.toJSON())} err=${e.toString()}`);
+        throw e;
+      }
+
+      return this.sendRawTransaction(rawTx, retryCount + 1);
     }
   }
 
