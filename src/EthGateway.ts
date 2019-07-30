@@ -157,6 +157,7 @@ export class EthGateway extends AccountBasedGateway {
     fromAddress: Address,
     toAddress: Address,
     value: BigNumber,
+    tag?: string,
     isConsolidate: boolean = false
   ): Promise<IRawTransaction> {
     let amount = web3.utils.toBN(value);
