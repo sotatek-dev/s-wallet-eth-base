@@ -36,12 +36,12 @@ const _cacheBlockNumber = {
   isRequesting: false,
 };
 const _cacheRawTxByHash: LRU<string, web3_types.Transaction> = new LRU({
-  max: 1024 * 1024,
-  maxAge: 1000 * 60 * 60,
+  max: 1024,
+  maxAge: 1000 * 60 * 5,
 });
 const _cacheRawTxReceipt: LRU<string, web3_types2.TransactionReceipt> = new LRU({
-  max: 1024 * 1024,
-  maxAge: 1000 * 60 * 60,
+  max: 1024,
+  maxAge: 1000 * 60 * 5,
 });
 const _isRequestingTx: Map<string, boolean> = new Map<string, boolean>();
 const _isRequestingReceipt: Map<string, boolean> = new Map<string, boolean>();
