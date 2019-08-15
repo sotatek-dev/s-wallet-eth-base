@@ -165,7 +165,7 @@ export class EthGateway extends AccountBasedGateway {
     let amount = web3.utils.toBN(value);
     const nonce = await web3.eth.getTransactionCount(fromAddress);
     const gasPrice = web3.utils.toBN(await web3.eth.getGasPrice());
-    const gasLimit = web3.utils.toBN(150000); // Maximum gas allow for Ethereum transaction
+    const gasLimit = web3.utils.toBN(options.isConsolidate ? 21000 : 150000); // Maximum gas allow for Ethereum transaction
     const fee = gasLimit.mul(gasPrice);
 
     if (options.isConsolidate) {
@@ -184,7 +184,7 @@ export class EthGateway extends AccountBasedGateway {
     const tx = new EthereumTx({
       chainId: this.getChainId(),
       data: '',
-      gasLimit: web3.utils.toHex(150000),
+      gasLimit: web3.utils.toHex(options.isConsolidate ? 21000 : 150000),
       gasPrice: web3.utils.toHex(gasPrice),
       nonce: web3.utils.toHex(nonce),
       to: toAddress,
