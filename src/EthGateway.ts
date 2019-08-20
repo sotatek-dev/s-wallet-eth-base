@@ -58,12 +58,9 @@ export class EthGateway extends AccountBasedGateway {
   }
 
   public async getAverageSeedingFee(): Promise<BigNumber> {
-    const gasPrice = web3.utils.toBN(await web3.eth.getGasPrice());
+    const gasPrice = web3.utils.toBN(await web3.eth.getGasPrice()).mul(web3.utils.toBN(2));
     const gasLimit = web3.utils.toBN(150000); // For ETH transaction 21000 gas is fixed
-    const result = gasPrice
-      .mul(gasLimit)
-      .mul(web3.utils.toBN(15))
-      .div(web3.utils.toBN(10));
+    const result = gasPrice.mul(gasLimit);
     return new BigNumber(result.toString());
   }
 
@@ -164,7 +161,7 @@ export class EthGateway extends AccountBasedGateway {
   ): Promise<IRawTransaction> {
     let amount = web3.utils.toBN(value);
     const nonce = await web3.eth.getTransactionCount(fromAddress);
-    const gasPrice = web3.utils.toBN(await web3.eth.getGasPrice());
+    const gasPrice = web3.utils.toBN(await web3.eth.getGasPrice()).mul(web3.utils.toBN(2));
     const gasLimit = web3.utils.toBN(options.isConsolidate ? 21000 : 150000); // Maximum gas allow for Ethereum transaction
     const fee = gasLimit.mul(gasPrice);
 
