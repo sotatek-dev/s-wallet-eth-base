@@ -55,9 +55,9 @@ export class EthGateway extends AccountBasedGateway {
     super(CurrencyRegistry.Ethereum);
   }
 
-  public async getGasPrice() {
+  public async getGasPrice(): Promise<BigNumber> {
     const realGasPrice = new BigNumber(await web3.eth.getGasPrice()).multipliedBy(mulNumber);
-    return realGasPrice.gt(maxGasPrice) ? maxGasPrice : realGasPrice;
+    return realGasPrice.gt(maxGasPrice) ? new BigNumber(maxGasPrice) : realGasPrice;
   }
 
   public getParallelNetworkRequestLimit() {
