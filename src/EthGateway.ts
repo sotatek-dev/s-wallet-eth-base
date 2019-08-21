@@ -31,7 +31,7 @@ import EthereumTx from 'ethereumjs-tx';
 
 const logger = getLogger('EthGateway');
 const mulNumber = 5;
-const maxGasPrice = 120;
+const maxGasPrice = 120000000000; // 120 gwei
 const _cacheBlockNumber = {
   value: 0,
   updatedAt: 0,
