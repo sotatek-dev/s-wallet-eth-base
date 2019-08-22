@@ -58,7 +58,7 @@ export class Erc20Gateway extends AccountBasedGateway {
   ): Promise<IRawTransaction> {
     const amount = web3.utils.toBN(value);
     const nonce = await web3.eth.getTransactionCount(fromAddress);
-    const gasPrice = web3.utils.toBN(await web3.eth.getGasPrice()).mul(web3.utils.toBN(2));
+    const gasPrice = web3.utils.toBN(await this._ethGateway.getGasPrice());
     const _gasLimit = await this._contract.methods
       .transfer(toAddress, amount.toString())
       .estimateGas({ from: fromAddress });

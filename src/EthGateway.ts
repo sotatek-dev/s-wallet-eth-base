@@ -30,6 +30,8 @@ import ERC20ABI from '../config/abi/erc20.json';
 import EthereumTx from 'ethereumjs-tx';
 
 const logger = getLogger('EthGateway');
+const mulNumber = 5;
+const maxGasPrice = 120000000000; // 120 gwei
 const _cacheBlockNumber = {
   value: 0,
   updatedAt: 0,
@@ -53,12 +55,17 @@ export class EthGateway extends AccountBasedGateway {
     super(CurrencyRegistry.Ethereum);
   }
 
+  public async getGasPrice(): Promise<BigNumber> {
+    const realGasPrice = new BigNumber(await web3.eth.getGasPrice()).multipliedBy(mulNumber);
+    return realGasPrice.gt(maxGasPrice) ? new BigNumber(maxGasPrice) : realGasPrice;
+  }
+
   public getParallelNetworkRequestLimit() {
     return 100;
   }
 
   public async getAverageSeedingFee(): Promise<BigNumber> {
-    const gasPrice = web3.utils.toBN(await web3.eth.getGasPrice()).mul(web3.utils.toBN(2));
+    const gasPrice = web3.utils.toBN(await this.getGasPrice());
     const gasLimit = web3.utils.toBN(150000); // For ETH transaction 21000 gas is fixed
     const result = gasPrice.mul(gasLimit);
     return new BigNumber(result.toString());
@@ -161,7 +168,7 @@ export class EthGateway extends AccountBasedGateway {
   ): Promise<IRawTransaction> {
     let amount = web3.utils.toBN(value);
     const nonce = await web3.eth.getTransactionCount(fromAddress);
-    const gasPrice = web3.utils.toBN(await web3.eth.getGasPrice()).mul(web3.utils.toBN(2));
+    const gasPrice = web3.utils.toBN(await this.getGasPrice());
     const gasLimit = web3.utils.toBN(options.isConsolidate ? 21000 : 150000); // Maximum gas allow for Ethereum transaction
     const fee = gasLimit.mul(gasPrice);
 
