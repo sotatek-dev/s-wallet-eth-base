@@ -32,6 +32,7 @@ import EthereumTx from 'ethereumjs-tx';
 
 const logger = getLogger('EthGateway');
 const mulNumber = 5;
+const plusNumber = 20000000000; // 20 gwei
 const maxGasPrice = 120000000000; // 120 gwei
 const _cacheBlockNumber = {
   value: 0,
@@ -57,9 +58,32 @@ export class EthGateway extends AccountBasedGateway {
     super(CurrencyRegistry.Ethereum);
   }
 
+  /**
+   * We want to set gas price is a bit higher than the network's average
+   * Start with base price which is parse from web3 lib, we choose the smallest one among:
+   * - basePrice * 5
+   * - basePrice + 20 (gwei)
+   * - absolute 120 gwei
+   * - if basePrice > 120 gwei, just use the base price (it's crazy if going this far though...)
+   */
   public async getGasPrice(): Promise<BigNumber> {
-    const realGasPrice = new BigNumber(await web3.eth.getGasPrice()).multipliedBy(mulNumber);
-    return realGasPrice.gt(maxGasPrice) ? new BigNumber(maxGasPrice) : realGasPrice;
+    const baseGasPrice = new BigNumber(await web3.eth.getGasPrice());
+    let finalGasPrice: BigNumber = new BigNumber(maxGasPrice);
+    const multiplyGasPrice = baseGasPrice.multipliedBy(mulNumber);
+    if (finalGasPrice.gt(multiplyGasPrice)) {
+      finalGasPrice = multiplyGasPrice;
+    }
+
+    const plusGasPrice = baseGasPrice.plus(plusNumber);
+    if (finalGasPrice.gt(plusGasPrice)) {
+      finalGasPrice = plusGasPrice;
+    }
+
+    if (baseGasPrice.gt(finalGasPrice)) {
+      finalGasPrice = baseGasPrice;
+    }
+
+    return finalGasPrice;
   }
 
   public getParallelNetworkRequestLimit() {
