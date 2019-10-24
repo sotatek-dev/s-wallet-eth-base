@@ -320,7 +320,7 @@ export class EthGateway extends AccountBasedGateway {
     }
 
     const tx = (await this.getOneTransaction(txid)) as EthTransaction;
-    if (!tx) {
+    if (!tx || !tx.confirmations) {
       return TransactionStatus.UNKNOWN;
     }
 
