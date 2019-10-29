@@ -25,12 +25,11 @@ import {
 import LRU from 'lru-cache';
 import { EthTransaction } from './EthTransaction';
 import * as EthTypeConverter from './EthTypeConverter';
-import { web3 } from './web3';
+import { web3, infuraWeb3 } from './web3';
 import ERC20ABI from '../config/abi/erc20.json';
 import EthereumTx from 'ethereumjs-tx';
 
 const logger = getLogger('EthGateway');
-const mulNumber = 5;
 const maxGasPrice = 120000000000; // 120 gwei
 const _cacheBlockNumber = {
   value: 0,
@@ -55,7 +54,12 @@ export class EthGateway extends AccountBasedGateway {
     super(CurrencyRegistry.Ethereum);
   }
 
-  public async getGasPrice(): Promise<BigNumber> {
+  public async getGasPrice(useLowerNetworkFee?: boolean): Promise<BigNumber> {
+    let mulNumber = 5;
+    if (!!useLowerNetworkFee) {
+      mulNumber = 2;
+    }
+
     const realGasPrice = new BigNumber(await web3.eth.getGasPrice()).multipliedBy(mulNumber);
     return realGasPrice.gt(maxGasPrice) ? new BigNumber(maxGasPrice) : realGasPrice;
   }
@@ -164,11 +168,12 @@ export class EthGateway extends AccountBasedGateway {
     options: {
       isConsolidate: false;
       destinationTag?: string;
+      useLowerNetworkFee?: boolean;
     }
   ): Promise<IRawTransaction> {
     let amount = web3.utils.toBN(value);
     const nonce = await web3.eth.getTransactionCount(fromAddress);
-    const gasPrice = web3.utils.toBN(await this.getGasPrice());
+    const gasPrice = web3.utils.toBN(await this.getGasPrice(options.useLowerNetworkFee));
     const gasLimit = web3.utils.toBN(options.isConsolidate ? 21000 : 150000); // Maximum gas allow for Ethereum transaction
     const fee = gasLimit.mul(gasPrice);
 
@@ -256,7 +261,11 @@ export class EthGateway extends AccountBasedGateway {
     }
 
     try {
-      const receipt = await web3.eth.sendSignedTransaction(rawTx);
+      const [receipt, infuraReceipt] = await Promise.all([
+        web3.eth.sendSignedTransaction(rawTx),
+        infuraWeb3.eth.sendSignedTransaction(rawTx),
+      ]);
+      logger.info(`EthGateway::sendRawTransaction infura_txid=${infuraReceipt.transactionHash}`);
       return { txid: receipt.transactionHash };
     } catch (e) {
       if (e.toString().indexOf('known transaction') > -1) {
