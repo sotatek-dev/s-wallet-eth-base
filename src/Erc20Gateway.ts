@@ -54,14 +54,23 @@ export class Erc20Gateway extends AccountBasedGateway {
   public async constructRawTransaction(
     fromAddress: Address,
     toAddress: Address,
-    value: BigNumber
+    value: BigNumber,
+    options: {
+      useLowerNetworkFee?: boolean;
+    }
   ): Promise<IRawTransaction> {
     const amount = web3.utils.toBN(value);
     const nonce = await web3.eth.getTransactionCount(fromAddress);
-    const gasPrice = web3.utils.toBN(await this._ethGateway.getGasPrice());
-    const _gasLimit = await this._contract.methods
+    const gasPrice = web3.utils.toBN(await this._ethGateway.getGasPrice(options.useLowerNetworkFee));
+    let _gasLimit = await this._contract.methods
       .transfer(toAddress, amount.toString())
       .estimateGas({ from: fromAddress });
+
+    // Fix maximum gas limit is 150,000 to prevent draining attack
+    if (_gasLimit > 150000) {
+      _gasLimit = 150000;
+    }
+
     const gasLimit = web3.utils.toBN(_gasLimit);
     const fee = gasLimit.mul(gasPrice);
 
