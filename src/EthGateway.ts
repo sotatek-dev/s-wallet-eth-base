@@ -30,8 +30,6 @@ import ERC20ABI from '../config/abi/erc20.json';
 import EthereumTx from 'ethereumjs-tx';
 
 const logger = getLogger('EthGateway');
-const mulNumber = 5;
-const plusNumber = 20000000000; // 20 gwei
 const maxGasPrice = 120000000000; // 120 gwei
 const _cacheBlockNumber = {
   value: 0,
@@ -64,14 +62,21 @@ export class EthGateway extends AccountBasedGateway {
    * - absolute 120 gwei
    * - if basePrice > 120 gwei, just use the base price (it's crazy if going this far though...)
    */
-  public async getGasPrice(): Promise<BigNumber> {
+  public async getGasPrice(useLowerNetworkFee?: boolean): Promise<BigNumber> {
     const baseGasPrice = new BigNumber(await web3.eth.getGasPrice());
     let finalGasPrice: BigNumber = new BigNumber(maxGasPrice);
+
+    let mulNumber = 5;
+    if (!!useLowerNetworkFee) {
+      mulNumber = 2;
+    }
+
     const multiplyGasPrice = baseGasPrice.multipliedBy(mulNumber);
     if (finalGasPrice.gt(multiplyGasPrice)) {
       finalGasPrice = multiplyGasPrice;
     }
 
+    const plusNumber = 20000000000; // 20 gwei
     const plusGasPrice = baseGasPrice.plus(plusNumber);
     if (finalGasPrice.gt(plusGasPrice)) {
       finalGasPrice = plusGasPrice;
@@ -188,11 +193,12 @@ export class EthGateway extends AccountBasedGateway {
     options: {
       isConsolidate: false;
       destinationTag?: string;
+      useLowerNetworkFee?: boolean;
     }
   ): Promise<IRawTransaction> {
     let amount = web3.utils.toBN(value);
     const nonce = await web3.eth.getTransactionCount(fromAddress);
-    const gasPrice = web3.utils.toBN(await this.getGasPrice());
+    const gasPrice = web3.utils.toBN(await this.getGasPrice(options.useLowerNetworkFee));
     const gasLimit = web3.utils.toBN(options.isConsolidate ? 21000 : 150000); // Maximum gas allow for Ethereum transaction
     const fee = gasLimit.mul(gasPrice);
 
@@ -318,7 +324,7 @@ export class EthGateway extends AccountBasedGateway {
     }
 
     const tx = (await this.getOneTransaction(txid)) as EthTransaction;
-    if (!tx) {
+    if (!tx || !tx.confirmations) {
       return TransactionStatus.UNKNOWN;
     }
 
