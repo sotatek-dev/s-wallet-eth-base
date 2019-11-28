@@ -71,8 +71,8 @@ export class Erc20Gateway extends AccountBasedGateway {
       .estimateGas({ from: fromAddress });
 
     // Fix maximum gas limit is 150,000 to prevent draining attack
-    if (_gasLimit > 150000) {
-      _gasLimit = 150000;
+    if (_gasLimit > 300000) {
+      _gasLimit = 300000;
     }
 
     const gasLimit = web3.utils.toBN(_gasLimit);
