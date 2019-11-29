@@ -18,6 +18,7 @@ import {
   ISubmittedTransaction,
   getLogger,
   implement,
+  IMultiEntriesTxEntry,
 } from 'sota-common';
 import Erc20Transaction from './Erc20Transaction';
 import ERC20ABI from '../config/abi/erc20.json';
@@ -139,7 +140,7 @@ export class Erc20Gateway extends AccountBasedGateway {
       this.getBlockCount(),
     ]);
 
-    const log = _.find(
+    const logs = _.filter(
       receipt.logs,
       l =>
         l.address.toLowerCase() === this._currency.contractAddress.toLocaleLowerCase() &&
@@ -149,30 +150,44 @@ export class Erc20Gateway extends AccountBasedGateway {
 
     // Cannot find any transfer log event
     // Just treat the transaction as failed
-    if (!log) {
+    if (!logs || !logs.length) {
       return null;
     }
 
     const inputs = _.find(ERC20ABI, abi => abi.type === 'event' && abi.name === 'Transfer').inputs;
-    let parsedLog;
 
-    try {
-      parsedLog = web3.eth.abi.decodeLog(inputs, log.data, log.topics.slice(1)) as any;
-    } catch (e) {
-      throw new Error(`Cannot decode log for transaction: ${txid} of contract ${this._currency.contractAddress}`);
-    }
+    const vIns: IMultiEntriesTxEntry[] = [];
+    const vOuts: IMultiEntriesTxEntry[] = [];
+    logs.forEach(log => {
+      try {
+        const parsedLog = web3.eth.abi.decodeLog(inputs, log.data, log.topics.slice(1)) as any;
+        vIns.push({
+          address: parsedLog.from,
+          currency: this._currency,
+          amount: parsedLog.value,
+        });
+        vOuts.push({
+          address: parsedLog.to,
+          currency: this._currency,
+          amount: parsedLog.value,
+        });
+      } catch (e) {
+        throw new Error(`Cannot decode log for transaction: ${txid} of contract ${this._currency.contractAddress}`);
+      }
+    });
 
-    const txProps = {
-      amount: new BigNumber(parsedLog.value),
-      contractAddress: this._currency.contractAddress,
-      fromAddress: parsedLog.from,
-      originalTx: tx,
-      toAddress: parsedLog.to,
-      txid,
-      isFailed: false,
-    };
-
-    return new Erc20Transaction(this._currency, txProps, block, receipt, blockHeight);
+    return new Erc20Transaction(
+      this._currency,
+      {
+        originalTx: tx,
+        txid,
+        inputs: vIns,
+        outputs: vOuts,
+        block,
+        lastNetworkBlockNumber: blockHeight,
+      },
+      receipt
+    );
   }
 
   /**
