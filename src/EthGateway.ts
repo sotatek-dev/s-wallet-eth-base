@@ -21,8 +21,9 @@ import {
   TokenType,
   BlockchainPlatform,
   Transactions,
+  getClient,
 } from 'sota-common';
-import LRU from 'lru-cache';
+// import LRU from 'lru-cache';
 import { EthTransaction } from './EthTransaction';
 import * as EthTypeConverter from './EthTypeConverter';
 import { web3, infuraWeb3 } from './web3';
@@ -36,14 +37,15 @@ const _cacheBlockNumber = {
   updatedAt: 0,
   isRequesting: false,
 };
-const _cacheRawTxByHash: LRU<string, web3_types.Transaction> = new LRU({
-  max: 1024,
-  maxAge: 1000 * 60 * 5,
-});
-const _cacheRawTxReceipt: LRU<string, web3_types2.TransactionReceipt> = new LRU({
-  max: 1024,
-  maxAge: 1000 * 60 * 5,
-});
+// 18/12/2019 disabled now, using redis instead of lru
+// const _cacheRawTxByHash: LRU<string, web3_types.Transaction> = new LRU({
+//   max: 1024,
+//   maxAge: 1000 * 60 * 5,
+// });
+// const _cacheRawTxReceipt: LRU<string, web3_types2.TransactionReceipt> = new LRU({
+//   max: 1024,
+//   maxAge: 1000 * 60 * 5,
+// });
 const _isRequestingTx: Map<string, boolean> = new Map<string, boolean>();
 const _isRequestingReceipt: Map<string, boolean> = new Map<string, boolean>();
 
@@ -340,8 +342,11 @@ export class EthGateway extends AccountBasedGateway {
   }
 
   public async getRawTransaction(txid: string): Promise<web3_types.Transaction> {
-    const cachedTx = _cacheRawTxByHash.get(txid);
-    if (cachedTx) {
+    const key = '_cacheRawTxByHash_' + this.getCurrency().symbol + txid;
+    const redisClient = getClient();
+    const cachedData = await redisClient.get(key);
+    if (!!cachedData) {
+      const cachedTx: web3_types.Transaction = JSON.parse(cachedData);
       return cachedTx;
     }
 
@@ -363,13 +368,16 @@ export class EthGateway extends AccountBasedGateway {
       throw new Error(`${gwName}::getRawTransaction tx doesn't have block number txid=${txid}`);
     }
 
-    _cacheRawTxByHash.set(txid, tx);
+    redisClient.setex(key, 7200000, JSON.stringify(tx));
     return tx;
   }
 
   public async getRawTransactionReceipt(txid: string): Promise<web3_types2.TransactionReceipt> {
-    const cachedReceipt = _cacheRawTxReceipt.get(txid);
-    if (cachedReceipt) {
+    const redisClient = getClient();
+    const key = '_cacheRawTxReceipt_' + this.getCurrency().symbol + txid;
+    const cachedData = await redisClient.get(key);
+    if (!!cachedData) {
+      const cachedReceipt: web3_types2.TransactionReceipt = JSON.parse(cachedData);
       return cachedReceipt;
     }
 
@@ -386,7 +394,7 @@ export class EthGateway extends AccountBasedGateway {
       throw new Error(`${gwName}::getRawTransactionReceipt could not get receipt txid=${txid}`);
     }
 
-    _cacheRawTxReceipt.set(txid, receipt);
+    redisClient.setex(key, 7200000, JSON.stringify(receipt));
     return receipt;
   }
 
