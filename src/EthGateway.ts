@@ -414,6 +414,7 @@ export class EthGateway extends AccountBasedGateway {
         decimals,
         humanReadableScale: decimals,
         nativeScale: 0,
+        hasMemo: false,
       };
     } catch (e) {
       logger.error(`EthGateway::getErc20TokenInfo could not get info contract=${contractAddress} due to error:`);
