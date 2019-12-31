@@ -17,10 +17,14 @@ import {
   TransactionStatus,
   ISubmittedTransaction,
   getLogger,
+  Utils,
   implement,
+  override,
 } from 'sota-common';
+import pLimit from 'p-limit';
 import Erc20Transaction from './Erc20Transaction';
 import ERC20ABI from '../config/abi/erc20.json';
+import Erc20Transactions from './Erc20Transactions';
 
 const logger = getLogger('Erc20Gateway');
 
@@ -66,9 +70,9 @@ export class Erc20Gateway extends AccountBasedGateway {
       .transfer(toAddress, amount.toString())
       .estimateGas({ from: fromAddress });
 
-    // Fix maximum gas limit is 150,000 to prevent draining attack
-    if (_gasLimit > 150000) {
-      _gasLimit = 150000;
+    // Fix maximum gas limit is 300,000 to prevent draining attack
+    if (_gasLimit > 300000) {
+      _gasLimit = 300000;
     }
 
     const gasLimit = web3.utils.toBN(_gasLimit);
@@ -131,15 +135,53 @@ export class Erc20Gateway extends AccountBasedGateway {
     return this._ethGateway.getTransactionStatus(txid);
   }
 
+  @override
+  public async getTransactionsByIds(txids: string[]): Promise<Erc20Transactions> {
+    const result = new Erc20Transactions();
+    if (!txids || !txids.length) {
+      return result;
+    }
+
+    const getOneTx = async (txid: string) => {
+      const txs = await this.getTransactionsByTxid(txid);
+      if (txs) {
+        result.mutableConcat(txs);
+      }
+    };
+
+    const limit = pLimit(this.getParallelNetworkRequestLimit());
+    await Utils.PromiseAll(
+      txids.map(async txid => {
+        return limit(() => getOneTx(txid));
+      })
+    );
+
+    return result;
+  }
+
+  @override
+  public async getOneTransaction(txid: string): Promise<Erc20Transaction> {
+    throw new Error(`Erc20Gateway::getOneTransaction since there're some special tokens. This method is deprecated..`);
+  }
+
+  public async getTransactionsByTxid(txid: string): Promise<Erc20Transactions> {
+    return this._getTransactionsByTxid(txid);
+  }
+
   protected async _getOneTransaction(txid: string): Promise<Erc20Transaction> {
+    throw new Error(`Erc20Gateway::_getOneTransaction since there're some special tokens. This method is deprecated..`);
+  }
+
+  protected async _getTransactionsByTxid(txid: string): Promise<Erc20Transactions> {
     const tx = await this._ethGateway.getRawTransaction(txid);
     const [block, receipt, blockHeight] = await Promise.all([
       this.getOneBlock(tx.blockNumber),
       this._ethGateway.getRawTransactionReceipt(txid),
       this.getBlockCount(),
     ]);
+    const result = new Erc20Transactions();
 
-    const log = _.find(
+    const logs = _.filter(
       receipt.logs,
       l =>
         l.address.toLowerCase() === this._currency.contractAddress.toLocaleLowerCase() &&
@@ -149,30 +191,34 @@ export class Erc20Gateway extends AccountBasedGateway {
 
     // Cannot find any transfer log event
     // Just treat the transaction as failed
-    if (!log) {
-      return null;
+    if (!logs || !logs.length) {
+      return result;
     }
 
     const inputs = _.find(ERC20ABI, abi => abi.type === 'event' && abi.name === 'Transfer').inputs;
-    let parsedLog;
+    logs.forEach(log => {
+      let parsedLog = null;
 
-    try {
-      parsedLog = web3.eth.abi.decodeLog(inputs, log.data, log.topics.slice(1)) as any;
-    } catch (e) {
-      throw new Error(`Cannot decode log for transaction: ${txid} of contract ${this._currency.contractAddress}`);
-    }
+      try {
+        parsedLog = web3.eth.abi.decodeLog(inputs, log.data, log.topics.slice(1)) as any;
+      } catch (e) {
+        throw new Error(`Cannot decode log for transaction: ${txid} of contract ${this._currency.contractAddress}`);
+      }
 
-    const txProps = {
-      amount: new BigNumber(parsedLog.value),
-      contractAddress: this._currency.contractAddress,
-      fromAddress: parsedLog.from,
-      originalTx: tx,
-      toAddress: parsedLog.to,
-      txid,
-      isFailed: false,
-    };
+      const txProps = {
+        amount: new BigNumber(parsedLog.value),
+        contractAddress: this._currency.contractAddress,
+        fromAddress: parsedLog.from,
+        originalTx: tx,
+        toAddress: parsedLog.to,
+        txid,
+        isFailed: false,
+      };
 
-    return new Erc20Transaction(this._currency, txProps, block, receipt, blockHeight);
+      result.push(new Erc20Transaction(this._currency, txProps, block, receipt, blockHeight));
+    });
+
+    return result;
   }
 
   /**
