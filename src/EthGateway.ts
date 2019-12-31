@@ -20,17 +20,17 @@ import {
   IErc20Token,
   TokenType,
   BlockchainPlatform,
-  Transactions,
+  getClient,
+  EnvConfigRegistry,
 } from 'sota-common';
 import LRU from 'lru-cache';
 import { EthTransaction } from './EthTransaction';
 import * as EthTypeConverter from './EthTypeConverter';
-import { web3 } from './web3';
+import { web3, infuraWeb3 } from './web3';
 import ERC20ABI from '../config/abi/erc20.json';
 import EthereumTx from 'ethereumjs-tx';
 
 const logger = getLogger('EthGateway');
-const mulNumber = 5;
 const plusNumber = 20000000000; // 20 gwei
 const maxGasPrice = 120000000000; // 120 gwei
 const _cacheBlockNumber = {
@@ -38,6 +38,7 @@ const _cacheBlockNumber = {
   updatedAt: 0,
   isRequesting: false,
 };
+
 const _cacheRawTxByHash: LRU<string, web3_types.Transaction> = new LRU({
   max: 1024,
   maxAge: 1000 * 60 * 5,
@@ -64,9 +65,15 @@ export class EthGateway extends AccountBasedGateway {
    * - absolute 120 gwei
    * - if basePrice > 120 gwei, just use the base price (it's crazy if going this far though...)
    */
-  public async getGasPrice(): Promise<BigNumber> {
+  public async getGasPrice(useLowerNetworkFee?: boolean): Promise<BigNumber> {
     const baseGasPrice = new BigNumber(await web3.eth.getGasPrice());
     let finalGasPrice: BigNumber = new BigNumber(maxGasPrice);
+
+    let mulNumber = 5;
+    if (!!useLowerNetworkFee) {
+      mulNumber = 2;
+    }
+
     const multiplyGasPrice = baseGasPrice.multipliedBy(mulNumber);
     if (finalGasPrice.gt(multiplyGasPrice)) {
       finalGasPrice = multiplyGasPrice;
@@ -188,11 +195,12 @@ export class EthGateway extends AccountBasedGateway {
     options: {
       isConsolidate: false;
       destinationTag?: string;
+      useLowerNetworkFee?: boolean;
     }
   ): Promise<IRawTransaction> {
     let amount = web3.utils.toBN(value);
     const nonce = await web3.eth.getTransactionCount(fromAddress);
-    const gasPrice = web3.utils.toBN(await this.getGasPrice());
+    const gasPrice = web3.utils.toBN(await this.getGasPrice(options.useLowerNetworkFee));
     const gasLimit = web3.utils.toBN(options.isConsolidate ? 21000 : 150000); // Maximum gas allow for Ethereum transaction
     const fee = gasLimit.mul(gasPrice);
 
@@ -280,7 +288,11 @@ export class EthGateway extends AccountBasedGateway {
     }
 
     try {
-      const receipt = await web3.eth.sendSignedTransaction(rawTx);
+      const [receipt, infuraReceipt] = await Promise.all([
+        web3.eth.sendSignedTransaction(rawTx),
+        infuraWeb3.eth.sendSignedTransaction(rawTx),
+      ]);
+      logger.info(`EthGateway::sendRawTransaction infura_txid=${infuraReceipt.transactionHash}`);
       return { txid: receipt.transactionHash };
     } catch (e) {
       if (e.toString().indexOf('known transaction') > -1) {
@@ -314,7 +326,7 @@ export class EthGateway extends AccountBasedGateway {
     }
 
     const tx = (await this.getOneTransaction(txid)) as EthTransaction;
-    if (!tx) {
+    if (!tx || !tx.confirmations) {
       return TransactionStatus.UNKNOWN;
     }
 
@@ -330,7 +342,18 @@ export class EthGateway extends AccountBasedGateway {
   }
 
   public async getRawTransaction(txid: string): Promise<web3_types.Transaction> {
-    const cachedTx = _cacheRawTxByHash.get(txid);
+    const key = '_cacheRawTxByHash_' + this.getCurrency().symbol + txid;
+    let redisClient;
+    let cachedTx: web3_types.Transaction;
+    if (!!EnvConfigRegistry.isUsingRedis()) {
+      redisClient = getClient();
+      const cachedData = await redisClient.get(key);
+      if (!!cachedData) {
+        cachedTx = JSON.parse(cachedData);
+      }
+    } else {
+      cachedTx = _cacheRawTxByHash.get(key);
+    }
     if (cachedTx) {
       return cachedTx;
     }
@@ -353,12 +376,26 @@ export class EthGateway extends AccountBasedGateway {
       throw new Error(`${gwName}::getRawTransaction tx doesn't have block number txid=${txid}`);
     }
 
-    _cacheRawTxByHash.set(txid, tx);
+    if (redisClient) {
+      // redis cache tx in 2mins
+      redisClient.setex(key, 120, JSON.stringify(tx));
+    } else {
+      _cacheRawTxByHash.set(key, tx);
+    }
     return tx;
   }
 
   public async getRawTransactionReceipt(txid: string): Promise<web3_types2.TransactionReceipt> {
-    const cachedReceipt = _cacheRawTxReceipt.get(txid);
+    const key = '_cacheRawTxReceipt_' + this.getCurrency().symbol + txid;
+    let redisClient;
+    let cachedReceipt: web3_types2.TransactionReceipt;
+    if (!!EnvConfigRegistry.isUsingRedis()) {
+      redisClient = getClient();
+      const cachedData = await redisClient.get(key);
+      cachedReceipt = JSON.parse(cachedData);
+    } else {
+      cachedReceipt = _cacheRawTxReceipt.get(key);
+    }
     if (cachedReceipt) {
       return cachedReceipt;
     }
@@ -376,7 +413,12 @@ export class EthGateway extends AccountBasedGateway {
       throw new Error(`${gwName}::getRawTransactionReceipt could not get receipt txid=${txid}`);
     }
 
-    _cacheRawTxReceipt.set(txid, receipt);
+    if (redisClient) {
+      // redis cache receipt in 2mins
+      redisClient.setex(key, 120, JSON.stringify(receipt));
+    } else {
+      _cacheRawTxReceipt.set(key, receipt);
+    }
     return receipt;
   }
 
@@ -404,6 +446,7 @@ export class EthGateway extends AccountBasedGateway {
         decimals,
         humanReadableScale: decimals,
         nativeScale: 0,
+        hasMemo: false,
       };
     } catch (e) {
       logger.error(`EthGateway::getErc20TokenInfo could not get info contract=${contractAddress} due to error:`);
