@@ -334,7 +334,7 @@ export class EthGateway extends AccountBasedGateway {
       return TransactionStatus.CONFIRMING;
     }
 
-    if (!tx.receiptStatus) {
+    if (!!tx.receipt && tx.receipt.status === false) {
       return TransactionStatus.FAILED;
     }
 

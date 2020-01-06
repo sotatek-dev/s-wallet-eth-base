@@ -13,7 +13,6 @@ interface IERC20TransactionProps {
 
 export class Erc20Transaction extends AccountBasedTransaction {
   public readonly currency: IErc20Token;
-  public readonly receiptStatus: boolean;
   public readonly block: BlockHeader;
   public readonly receipt: web3_types.TransactionReceipt;
   public readonly originalTx: eth_types.Transaction;
@@ -41,11 +40,10 @@ export class Erc20Transaction extends AccountBasedTransaction {
 
     super(currency, txProps, block);
 
-    this.receiptStatus = receipt.status;
     this.block = block;
     this.receipt = receipt;
     this.originalTx = tx.originalTx;
-    this.isFailed = !this.receiptStatus;
+    this.isFailed = !this.receipt.status;
   }
 
   public getExtraDepositData(): any {

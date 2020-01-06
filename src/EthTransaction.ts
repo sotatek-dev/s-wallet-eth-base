@@ -4,7 +4,6 @@ import * as web3_types from 'web3/types';
 import * as eth_types from 'web3/eth/types';
 
 export class EthTransaction extends AccountBasedTransaction {
-  public readonly receiptStatus: boolean;
   public readonly block: BlockHeader;
   public readonly receipt: web3_types.TransactionReceipt;
   public readonly originalTx: eth_types.Transaction;
@@ -28,11 +27,10 @@ export class EthTransaction extends AccountBasedTransaction {
 
     super(currency, txProps, block);
 
-    this.receiptStatus = receipt.status;
     this.block = block;
     this.receipt = receipt;
     this.originalTx = tx;
-    this.isFailed = !this.receiptStatus;
+    this.isFailed = !this.receipt.status;
   }
 
   public getExtraDepositData(): any {
