@@ -17,14 +17,11 @@ import {
   TransactionStatus,
   ISubmittedTransaction,
   getLogger,
-  Utils,
   implement,
-  override,
+  IMultiEntriesTxEntry,
 } from 'sota-common';
-import pLimit from 'p-limit';
 import Erc20Transaction from './Erc20Transaction';
 import ERC20ABI from '../config/abi/erc20.json';
-import Erc20Transactions from './Erc20Transactions';
 
 const logger = getLogger('Erc20Gateway');
 
@@ -135,51 +132,13 @@ export class Erc20Gateway extends AccountBasedGateway {
     return this._ethGateway.getTransactionStatus(txid);
   }
 
-  @override
-  public async getTransactionsByIds(txids: string[]): Promise<Erc20Transactions> {
-    const result = new Erc20Transactions();
-    if (!txids || !txids.length) {
-      return result;
-    }
-
-    const getOneTx = async (txid: string) => {
-      const txs = await this.getTransactionsByTxid(txid);
-      if (txs) {
-        result.mutableConcat(txs);
-      }
-    };
-
-    const limit = pLimit(this.getParallelNetworkRequestLimit());
-    await Utils.PromiseAll(
-      txids.map(async txid => {
-        return limit(() => getOneTx(txid));
-      })
-    );
-
-    return result;
-  }
-
-  @override
-  public async getOneTransaction(txid: string): Promise<Erc20Transaction> {
-    throw new Error(`Erc20Gateway::getOneTransaction since there're some special tokens. This method is deprecated..`);
-  }
-
-  public async getTransactionsByTxid(txid: string): Promise<Erc20Transactions> {
-    return this._getTransactionsByTxid(txid);
-  }
-
   protected async _getOneTransaction(txid: string): Promise<Erc20Transaction> {
-    throw new Error(`Erc20Gateway::_getOneTransaction since there're some special tokens. This method is deprecated..`);
-  }
-
-  protected async _getTransactionsByTxid(txid: string): Promise<Erc20Transactions> {
     const tx = await this._ethGateway.getRawTransaction(txid);
     const [block, receipt, blockHeight] = await Promise.all([
       this.getOneBlock(tx.blockNumber),
       this._ethGateway.getRawTransactionReceipt(txid),
       this.getBlockCount(),
     ]);
-    const result = new Erc20Transactions();
 
     const logs = _.filter(
       receipt.logs,
@@ -192,33 +151,43 @@ export class Erc20Gateway extends AccountBasedGateway {
     // Cannot find any transfer log event
     // Just treat the transaction as failed
     if (!logs || !logs.length) {
-      return result;
+      return null;
     }
 
     const inputs = _.find(ERC20ABI, abi => abi.type === 'event' && abi.name === 'Transfer').inputs;
-    logs.forEach(log => {
-      let parsedLog = null;
 
+    const vIns: IMultiEntriesTxEntry[] = [];
+    const vOuts: IMultiEntriesTxEntry[] = [];
+    logs.forEach(log => {
       try {
-        parsedLog = web3.eth.abi.decodeLog(inputs, log.data, log.topics.slice(1)) as any;
+        const parsedLog = web3.eth.abi.decodeLog(inputs, log.data, log.topics.slice(1)) as any;
+        vIns.push({
+          address: parsedLog.from,
+          currency: this._currency,
+          amount: parsedLog.value,
+        });
+        vOuts.push({
+          address: parsedLog.to,
+          currency: this._currency,
+          amount: parsedLog.value,
+        });
       } catch (e) {
         throw new Error(`Cannot decode log for transaction: ${txid} of contract ${this._currency.contractAddress}`);
       }
-
-      const txProps = {
-        amount: new BigNumber(parsedLog.value),
-        contractAddress: this._currency.contractAddress,
-        fromAddress: parsedLog.from,
-        originalTx: tx,
-        toAddress: parsedLog.to,
-        txid,
-        isFailed: false,
-      };
-
-      result.push(new Erc20Transaction(this._currency, txProps, block, receipt, blockHeight));
     });
 
-    return result;
+    return new Erc20Transaction(
+      this._currency,
+      {
+        originalTx: tx,
+        txid,
+        inputs: vIns,
+        outputs: vOuts,
+        block,
+        lastNetworkBlockNumber: blockHeight,
+      },
+      receipt
+    );
   }
 
   /**
