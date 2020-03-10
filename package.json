@@ -1,12 +1,12 @@
 {
   "name": "@sotatek/crypto-currency-eth",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
     "test": "NETWORK=rinkeby mocha --timeout 15000 -r ts-node/register ./test/testEthGateway.spec.ts"
   },
-  "author": "",
+  "author": "an.nguyen@sotatek.com",
   "license": "ISC",
   "dependencies": {
     "@types/ethereumjs-tx": "1.0.1",
@@ -17,8 +17,11 @@
     "lodash": "4.17.11",
     "lru-cache": "5.1.1",
     "p-limit": "2.2.0",
-    "sota-common": "npm:@sotatek/crypto-currency-common@0.1.21",
+    "sota-common": "npm:@sotatek/crypto-currency-common@^0.1",
     "web3": "1.0.0-beta.37"
+  },
+  "peerDependencies": {
+    "sota-common": "npm:@sotatek/crypto-currency-common@^0.1"
   },
   "devDependencies": {
     "@types/node": "13.9.0",
