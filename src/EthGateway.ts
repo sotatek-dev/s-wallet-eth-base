@@ -326,7 +326,16 @@ export class EthGateway extends AccountBasedGateway {
     }
 
     _isRequestingTx.set(txid, true);
-    let tx = await web3.eth.getTransaction(txid);
+    let tx;
+    try {
+      tx = await web3.eth.getTransaction(txid);
+    } catch (e) {
+      try {
+        tx = await infuraWeb3.eth.getTransaction(txid);
+      } catch (er) {
+        throw e;
+      }
+    }
     _isRequestingTx.delete(txid);
 
     if (!tx) {
