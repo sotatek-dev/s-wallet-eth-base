@@ -326,7 +326,7 @@ export class EthGateway extends AccountBasedGateway {
     }
 
     _isRequestingTx.set(txid, true);
-    const tx = await web3.eth.getTransaction(txid);
+    let tx = await web3.eth.getTransaction(txid);
     _isRequestingTx.delete(txid);
 
     if (!tx) {
@@ -334,8 +334,11 @@ export class EthGateway extends AccountBasedGateway {
     }
 
     if (!tx.blockNumber) {
-      const gwName = this.constructor.name;
-      throw new Error(`${gwName}::getRawTransaction tx doesn't have block number txid=${txid}`);
+      tx = await infuraWeb3.eth.getTransaction(txid);
+      if (!tx.blockNumber) {
+        const gwName = this.constructor.name;
+        throw new Error(`${gwName}::getRawTransaction tx doesn't have block number txid=${txid}`);
+      }
     }
 
     _cacheRawTxByHash.set(txid, tx);
