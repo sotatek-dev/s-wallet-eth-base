@@ -14,6 +14,7 @@
     "@types/lru-cache": "5.1.0",
     "@types/node": "10.12.18",
     "@types/web3": "1.0.14",
+    "axios": "^0.19.2",
     "ethereumjs-tx": "1.3.7",
     "lodash": "4.17.11",
     "lru-cache": "5.1.1",
