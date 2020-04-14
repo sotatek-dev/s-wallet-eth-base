@@ -1,5 +1,5 @@
 import util from 'util';
-import { BaseWebServer, BlockchainPlatform, override, getLogger, EnvConfigRegistry } from 'sota-common';
+import { BaseWebServer, BlockchainPlatform, override, getLogger, EnvConfigRegistry, WebServiceStatus } from 'sota-common';
 import EthGateway from './EthGateway';
 import axios from 'axios';
 
@@ -31,10 +31,11 @@ export class EthWebServer extends BaseWebServer {
 
       const differentBlockNum = externalLatestBlockNum - localLatestBlockNum;
       const serviceReliability = (differentBlockNum < SAFETY_THRESHOLD) ? true : false;
+      const status = (differentBlockNum < SAFETY_THRESHOLD) ? WebServiceStatus.OK : WebServiceStatus.WARN;
 
-      return { webService: { isOK: true, serviceReliability, differentBlockNum } };
+      return { webService: { status, serviceReliability, differentBlockNum } };
     } catch (e) {
-      return { webService: { isOK: false, description: e.message } };
+      return { webService: { status: WebServiceStatus.WARN, description: e.message, } };
     }
   }
 
