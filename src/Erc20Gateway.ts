@@ -132,6 +132,13 @@ export class Erc20Gateway extends AccountBasedGateway {
     return this._ethGateway.getTransactionStatus(txid);
   }
 
+  public async estimateFee(options: { isConsolidate: boolean; useLowerNetworkFee?: boolean }): Promise<BigNumber> {
+    return await this._ethGateway.estimateFee({
+      isConsolidate: options.isConsolidate,
+      useLowerNetworkFee: options.useLowerNetworkFee,
+    });
+  }
+
   protected async _getOneTransaction(txid: string): Promise<Erc20Transaction> {
     const tx = await this._ethGateway.getRawTransaction(txid);
     const [block, receipt, blockHeight] = await Promise.all([
