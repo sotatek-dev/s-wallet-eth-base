@@ -193,6 +193,19 @@ var Erc20Gateway = (function (_super) {
     Erc20Gateway.prototype.getTransactionStatus = function (txid) {
         return this._ethGateway.getTransactionStatus(txid);
     };
+    Erc20Gateway.prototype.estimateFee = function (options) {
+        return __awaiter(this, void 0, void 0, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4, this._ethGateway.estimateFee({
+                            isConsolidate: options.isConsolidate,
+                            useLowerNetworkFee: options.useLowerNetworkFee,
+                        })];
+                    case 1: return [2, _a.sent()];
+                }
+            });
+        });
+    };
     Erc20Gateway.prototype._getOneTransaction = function (txid) {
         return __awaiter(this, void 0, void 0, function () {
             var tx, _a, block, receipt, blockHeight, logs, inputs, vIns, vOuts;

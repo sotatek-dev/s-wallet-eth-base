@@ -18,6 +18,10 @@ export declare class Erc20Gateway extends AccountBasedGateway {
     getAccountFromPrivateKey(privateKey: string): Promise<Account>;
     getBlockCount(): Promise<number>;
     getTransactionStatus(txid: string): Promise<TransactionStatus>;
+    estimateFee(options: {
+        isConsolidate: boolean;
+        useLowerNetworkFee?: boolean;
+    }): Promise<BigNumber>;
     protected _getOneTransaction(txid: string): Promise<Erc20Transaction>;
     protected _getOneBlock(blockNumber: string | number): Promise<Block>;
 }

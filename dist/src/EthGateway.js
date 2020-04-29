@@ -515,6 +515,23 @@ var EthGateway = (function (_super) {
         var config = sota_common_1.CurrencyRegistry.getCurrencyConfig(this._currency);
         return Number(config.chainId);
     };
+    EthGateway.prototype.estimateFee = function (options) {
+        return __awaiter(this, void 0, void 0, function () {
+            var gasPrice, _a, _b, gasLimit, fee;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
+                    case 0:
+                        _b = (_a = web3_1.web3.utils).toBN;
+                        return [4, this.getGasPrice(options.useLowerNetworkFee)];
+                    case 1:
+                        gasPrice = _b.apply(_a, [_c.sent()]);
+                        gasLimit = web3_1.web3.utils.toBN(options.isConsolidate ? 21000 : 150000);
+                        fee = gasLimit.mul(gasPrice);
+                        return [2, new sota_common_1.BigNumber(fee.toNumber())];
+                }
+            });
+        });
+    };
     EthGateway.prototype._getOneBlock = function (blockNumber) {
         return __awaiter(this, void 0, void 0, function () {
             var block, txids;
