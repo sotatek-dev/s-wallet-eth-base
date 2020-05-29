@@ -18,6 +18,8 @@ export declare class EthGateway extends AccountBasedGateway {
         isConsolidate: false;
         destinationTag?: string;
         useLowerNetworkFee?: boolean;
+        explicitGasPrice?: number;
+        explicitGasLimit?: number;
     }): Promise<IRawTransaction>;
     reconstructRawTx(rawTx: string): IRawTransaction;
     signRawTransaction(unsignedRaw: string, secret: string): Promise<ISignedRawTransaction>;

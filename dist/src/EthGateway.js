@@ -229,27 +229,35 @@ var EthGateway = (function (_super) {
     };
     EthGateway.prototype.constructRawTransaction = function (fromAddress, toAddress, value, options) {
         return __awaiter(this, void 0, void 0, function () {
-            var amount, nonce, gasPrice, _a, _b, gasLimit, fee, balance, _c, _d, tx;
-            return __generator(this, function (_e) {
-                switch (_e.label) {
+            var amount, nonce, _gasPrice, gasPrice, gasLimit, fee, balance, _a, _b, tx;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
                     case 0:
                         amount = web3_1.web3.utils.toBN(value);
                         return [4, web3_1.web3.eth.getTransactionCount(fromAddress)];
                     case 1:
-                        nonce = _e.sent();
-                        _b = (_a = web3_1.web3.utils).toBN;
-                        return [4, this.getGasPrice(options.useLowerNetworkFee)];
-                    case 2:
-                        gasPrice = _b.apply(_a, [_e.sent()]);
+                        nonce = _c.sent();
+                        if (!options.explicitGasPrice) return [3, 2];
+                        _gasPrice = new sota_common_1.BigNumber(options.explicitGasPrice);
+                        return [3, 4];
+                    case 2: return [4, this.getGasPrice(options.useLowerNetworkFee)];
+                    case 3:
+                        _gasPrice = _c.sent();
+                        _c.label = 4;
+                    case 4:
+                        gasPrice = web3_1.web3.utils.toBN(_gasPrice);
                         gasLimit = web3_1.web3.utils.toBN(options.isConsolidate ? 21000 : 150000);
+                        if (options.explicitGasLimit) {
+                            gasLimit = web3_1.web3.utils.toBN(options.explicitGasLimit);
+                        }
                         fee = gasLimit.mul(gasPrice);
                         if (options.isConsolidate) {
                             amount = amount.sub(fee);
                         }
-                        _d = (_c = web3_1.web3.utils).toBN;
+                        _b = (_a = web3_1.web3.utils).toBN;
                         return [4, web3_1.web3.eth.getBalance(fromAddress)];
-                    case 3:
-                        balance = _d.apply(_c, [(_e.sent()).toString()]);
+                    case 5:
+                        balance = _b.apply(_a, [(_c.sent()).toString()]);
                         if (balance.lt(amount.add(fee))) {
                             throw new Error("EthGateway::constructRawTransaction could not construct tx because of insufficient balance:          address=" + fromAddress + ", balance=" + balance + ", amount=" + amount + ", fee=" + fee);
                         }

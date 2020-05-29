@@ -11,6 +11,8 @@ export declare class Erc20Gateway extends AccountBasedGateway {
     getAddressBalance(address: string): Promise<BigNumber>;
     constructRawTransaction(fromAddress: Address, toAddress: Address, value: BigNumber, options: {
         useLowerNetworkFee?: boolean;
+        explicitGasPrice?: number;
+        explicitGasLimit?: number;
     }): Promise<IRawTransaction>;
     signRawTransaction(unsignedRaw: string, secret: string): Promise<ISignedRawTransaction>;
     sendRawTransaction(signedRawTx: string): Promise<ISubmittedTransaction>;
