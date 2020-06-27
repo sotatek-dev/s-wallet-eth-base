@@ -9,14 +9,15 @@ var infuraWeb3 = new Web3();
 exports.infuraWeb3 = infuraWeb3;
 sota_common_1.EnvConfigRegistry.onNetworkChanged(function (network) {
     logger.info("web3::onNetworkChanged network=" + network);
+    var infuraProjectId = process.env.INFURA_PROJECT_ID;
     if (network === sota_common_1.NetworkType.MainNet) {
-        var provider = new Web3.providers.HttpProvider('https://mainnet.infura.io/v3/cbc0dce4b2174caabf7ed0c4865920ff');
+        var provider = new Web3.providers.HttpProvider("https://mainnet.infura.io/v3/" + infuraProjectId);
         web3.setProvider(provider);
         infuraWeb3.setProvider(provider);
         return;
     }
     if (network === sota_common_1.NetworkType.TestNet) {
-        var provider = new Web3.providers.HttpProvider('https://rinkeby.infura.io/v3/cbc0dce4b2174caabf7ed0c4865920ff');
+        var provider = new Web3.providers.HttpProvider("https://mainnet.infura.io/v3/" + infuraProjectId);
         web3.setProvider(provider);
         infuraWeb3.setProvider(provider);
         return;
