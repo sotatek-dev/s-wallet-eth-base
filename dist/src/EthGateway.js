@@ -241,7 +241,13 @@ var EthGateway = (function (_super) {
                         return [4, this.getGasPrice(options.useLowerNetworkFee)];
                     case 2:
                         gasPrice = _b.apply(_a, [_e.sent()]);
+                        if (options.explicitGasPrice) {
+                            gasPrice = web3_1.web3.utils.toBN(options.explicitGasPrice);
+                        }
                         gasLimit = web3_1.web3.utils.toBN(options.isConsolidate ? 21000 : 150000);
+                        if (options.explicitGasLimit) {
+                            gasLimit = web3_1.web3.utils.toBN(options.explicitGasLimit);
+                        }
                         fee = gasLimit.mul(gasPrice);
                         if (options.isConsolidate) {
                             amount = amount.sub(fee);
@@ -334,7 +340,7 @@ var EthGateway = (function (_super) {
                             return [2, { txid: txid }];
                         }
                         if (retryCount + 1 > 5) {
-                            logger.fatal("Too many fails sending txid=" + txid + " tx=" + JSON.stringify(ethTx.toJSON()) + " err=" + e_1.toString());
+                            logger.error("Too many fails sending txid=" + txid + " tx=" + JSON.stringify(ethTx.toJSON()) + " err=" + e_1.toString());
                             throw e_1;
                         }
                         return [2, this.sendRawTransaction(rawTx, retryCount + 1)];
@@ -377,7 +383,7 @@ var EthGateway = (function (_super) {
                     case 0:
                         key = '_cacheRawTxByHash_' + this.getCurrency().symbol + txid;
                         if (!!!sota_common_1.EnvConfigRegistry.isUsingRedis()) return [3, 2];
-                        redisClient = sota_common_1.getClient();
+                        redisClient = sota_common_1.getRedisClient();
                         return [4, redisClient.get(key)];
                     case 1:
                         cachedData = _a.sent();
@@ -429,7 +435,7 @@ var EthGateway = (function (_super) {
                     case 0:
                         key = '_cacheRawTxReceipt_' + this.getCurrency().symbol + txid;
                         if (!!!sota_common_1.EnvConfigRegistry.isUsingRedis()) return [3, 2];
-                        redisClient = sota_common_1.getClient();
+                        redisClient = sota_common_1.getRedisClient();
                         return [4, redisClient.get(key)];
                     case 1:
                         cachedData = _a.sent();
