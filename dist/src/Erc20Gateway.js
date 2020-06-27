@@ -102,36 +102,46 @@ var Erc20Gateway = (function (_super) {
     };
     Erc20Gateway.prototype.constructRawTransaction = function (fromAddress, toAddress, value, options) {
         return __awaiter(this, void 0, void 0, function () {
-            var amount, nonce, gasPrice, _a, _b, _gasLimit, gasLimit, fee, ethBalance, _c, _d, balance, _e, _f, tx;
-            return __generator(this, function (_g) {
-                switch (_g.label) {
+            var amount, nonce, _gasPrice, gasPrice, _gasLimit, gasLimit, fee, ethBalance, _a, _b, balance, _c, _d, tx;
+            return __generator(this, function (_e) {
+                switch (_e.label) {
                     case 0:
                         amount = web3_1.web3.utils.toBN(value);
                         return [4, web3_1.web3.eth.getTransactionCount(fromAddress)];
                     case 1:
-                        nonce = _g.sent();
-                        _b = (_a = web3_1.web3.utils).toBN;
-                        return [4, this._ethGateway.getGasPrice(options.useLowerNetworkFee)];
-                    case 2:
-                        gasPrice = _b.apply(_a, [_g.sent()]);
-                        return [4, this._contract.methods
-                                .transfer(toAddress, amount.toString())
-                                .estimateGas({ from: fromAddress })];
+                        nonce = _e.sent();
+                        if (!options.explicitGasPrice) return [3, 2];
+                        _gasPrice = new sota_common_1.BigNumber(options.explicitGasPrice);
+                        return [3, 4];
+                    case 2: return [4, this._ethGateway.getGasPrice(options.useLowerNetworkFee)];
                     case 3:
-                        _gasLimit = _g.sent();
+                        _gasPrice = _e.sent();
+                        _e.label = 4;
+                    case 4:
+                        gasPrice = web3_1.web3.utils.toBN(_gasPrice);
+                        if (!options.explicitGasLimit) return [3, 5];
+                        _gasLimit = options.explicitGasLimit;
+                        return [3, 7];
+                    case 5: return [4, this._contract.methods
+                            .transfer(toAddress, amount.toString())
+                            .estimateGas({ from: fromAddress })];
+                    case 6:
+                        _gasLimit = _e.sent();
                         if (_gasLimit > 300000) {
                             _gasLimit = 300000;
                         }
+                        _e.label = 7;
+                    case 7:
                         gasLimit = web3_1.web3.utils.toBN(_gasLimit);
                         fee = gasLimit.mul(gasPrice);
-                        _d = (_c = web3_1.web3.utils).toBN;
+                        _b = (_a = web3_1.web3.utils).toBN;
                         return [4, web3_1.web3.eth.getBalance(fromAddress)];
-                    case 4:
-                        ethBalance = _d.apply(_c, [(_g.sent()).toString()]);
-                        _f = (_e = web3_1.web3.utils).toBN;
+                    case 8:
+                        ethBalance = _b.apply(_a, [(_e.sent()).toString()]);
+                        _d = (_c = web3_1.web3.utils).toBN;
                         return [4, this.getAddressBalance(fromAddress)];
-                    case 5:
-                        balance = _f.apply(_e, [_g.sent()]);
+                    case 9:
+                        balance = _d.apply(_c, [_e.sent()]);
                         if (balance.lt(amount)) {
                             throw new Error("Could not construct tx because of insufficient balance: address=" + fromAddress + ", amount=" + amount + ", fee=" + fee);
                         }

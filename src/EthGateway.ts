@@ -202,10 +202,13 @@ export class EthGateway extends AccountBasedGateway {
   ): Promise<IRawTransaction> {
     let amount = web3.utils.toBN(value);
     const nonce = await web3.eth.getTransactionCount(fromAddress);
-    let gasPrice = web3.utils.toBN(await this.getGasPrice(options.useLowerNetworkFee));
+    let _gasPrice: BigNumber;
     if (options.explicitGasPrice) {
-      gasPrice = web3.utils.toBN(options.explicitGasPrice);
+      _gasPrice = new BigNumber(options.explicitGasPrice);
+    } else {
+      _gasPrice = await this.getGasPrice(options.useLowerNetworkFee);
     }
+    const gasPrice = web3.utils.toBN(_gasPrice);
 
     let gasLimit = web3.utils.toBN(options.isConsolidate ? 21000 : 150000); // Maximum gas allow for Ethereum transaction
     if (options.explicitGasLimit) {
