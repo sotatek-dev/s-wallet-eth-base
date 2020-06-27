@@ -1,30 +1,34 @@
 {
-  "name": "sota-eth",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.ts",
+  "name": "@sotatek/crypto-currency-eth",
+  "version": "0.1.5",
+  "description": "Common package to handle Ethereum stuffs",
+  "main": "dist/index.js",
   "scripts": {
     "test": "NETWORK=rinkeby mocha --timeout 15000 -r ts-node/register ./test/testEthGateway.spec.ts"
   },
-  "author": "",
+  "author": "an.nguyen@sotatek.com",
   "license": "ISC",
   "dependencies": {
     "@types/ethereumjs-tx": "1.0.1",
     "@types/lodash": "4.14.119",
     "@types/lru-cache": "5.1.0",
-    "@types/node": "10.12.18",
     "@types/web3": "1.0.14",
     "ethereumjs-tx": "1.3.7",
     "lodash": "4.17.11",
     "lru-cache": "5.1.1",
     "p-limit": "2.2.0",
-    "sota-common": "../sota-common",
+    "sota-common": "npm:@sotatek/crypto-currency-common@^0.*",
     "web3": "1.0.0-beta.37"
   },
+  "peerDependencies": {
+    "sota-common": "npm:@sotatek/crypto-currency-common@^0.*"
+  },
   "devDependencies": {
-    "@types/chai": "4.1.7",
-    "@types/mocha": "5.2.5",
-    "chai": "4.2.0",
-    "mocha": "5.2.0"
+    "@types/node": "13.9.0",
+    "typescript": "3.8.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sotatek-dev/s-wallet-eth-base.git"
   }
 }

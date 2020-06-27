@@ -20,7 +20,7 @@ import {
   IErc20Token,
   TokenType,
   BlockchainPlatform,
-  getClient,
+  getRedisClient,
   EnvConfigRegistry,
 } from 'sota-common';
 import LRU from 'lru-cache';
@@ -196,12 +196,25 @@ export class EthGateway extends AccountBasedGateway {
       isConsolidate: false;
       destinationTag?: string;
       useLowerNetworkFee?: boolean;
+      explicitGasPrice?: number,
+      explicitGasLimit?: number,
     }
   ): Promise<IRawTransaction> {
     let amount = web3.utils.toBN(value);
     const nonce = await web3.eth.getTransactionCount(fromAddress);
-    const gasPrice = web3.utils.toBN(await this.getGasPrice(options.useLowerNetworkFee));
-    const gasLimit = web3.utils.toBN(options.isConsolidate ? 21000 : 150000); // Maximum gas allow for Ethereum transaction
+    let _gasPrice: BigNumber;
+    if (options.explicitGasPrice) {
+      _gasPrice = new BigNumber(options.explicitGasPrice);
+    } else {
+      _gasPrice = await this.getGasPrice(options.useLowerNetworkFee);
+    }
+    const gasPrice = web3.utils.toBN(_gasPrice);
+
+    let gasLimit = web3.utils.toBN(options.isConsolidate ? 21000 : 150000); // Maximum gas allow for Ethereum transaction
+    if (options.explicitGasLimit) {
+      gasLimit = web3.utils.toBN(options.explicitGasLimit);
+    }
+
     const fee = gasLimit.mul(gasPrice);
 
     if (options.isConsolidate) {
@@ -306,7 +319,7 @@ export class EthGateway extends AccountBasedGateway {
       }
 
       if (retryCount + 1 > 5) {
-        logger.fatal(`Too many fails sending txid=${txid} tx=${JSON.stringify(ethTx.toJSON())} err=${e.toString()}`);
+        logger.error(`Too many fails sending txid=${txid} tx=${JSON.stringify(ethTx.toJSON())} err=${e.toString()}`);
         throw e;
       }
 
@@ -346,7 +359,7 @@ export class EthGateway extends AccountBasedGateway {
     let redisClient;
     let cachedTx: web3_types.Transaction;
     if (!!EnvConfigRegistry.isUsingRedis()) {
-      redisClient = getClient();
+      redisClient = getRedisClient();
       const cachedData = await redisClient.get(key);
       if (!!cachedData) {
         cachedTx = JSON.parse(cachedData);
@@ -390,7 +403,7 @@ export class EthGateway extends AccountBasedGateway {
     let redisClient;
     let cachedReceipt: web3_types2.TransactionReceipt;
     if (!!EnvConfigRegistry.isUsingRedis()) {
-      redisClient = getClient();
+      redisClient = getRedisClient();
       const cachedData = await redisClient.get(key);
       cachedReceipt = JSON.parse(cachedData);
     } else {
@@ -458,6 +471,13 @@ export class EthGateway extends AccountBasedGateway {
   public getChainId(): number {
     const config = CurrencyRegistry.getCurrencyConfig(this._currency);
     return Number(config.chainId);
+  }
+
+  public async estimateFee(options: { isConsolidate: boolean; useLowerNetworkFee?: boolean }): Promise<BigNumber> {
+    const gasPrice = web3.utils.toBN(await this.getGasPrice(options.useLowerNetworkFee));
+    const gasLimit = web3.utils.toBN(options.isConsolidate ? 21000 : 150000); // Maximum gas allow for Ethereum transaction
+    const fee = gasLimit.mul(gasPrice);
+    return new BigNumber(fee.toNumber());
   }
 
   /**
