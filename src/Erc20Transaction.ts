@@ -1,19 +1,18 @@
 import { IErc20Token, BigNumber, MultiEntriesTransaction, IMultiEntriesTxProps } from 'sota-common';
-import * as web3_types from 'web3/types';
-import * as eth_types from 'web3/eth/types';
+import { Transaction, TransactionReceipt } from 'web3-core';
 import { web3 } from './web3';
 
 interface IERC20TransactionProps extends IMultiEntriesTxProps {
-  readonly originalTx: eth_types.Transaction;
+  readonly originalTx: Transaction;
 }
 
 export class Erc20Transaction extends MultiEntriesTransaction {
   public readonly currency: IErc20Token;
   public readonly receiptStatus: boolean;
-  public readonly receipt: web3_types.TransactionReceipt;
-  public readonly originalTx: eth_types.Transaction;
+  public readonly receipt: TransactionReceipt;
+  public readonly originalTx: Transaction;
 
-  constructor(currency: IErc20Token, txProps: IERC20TransactionProps, receipt: web3_types.TransactionReceipt) {
+  constructor(currency: IErc20Token, txProps: IERC20TransactionProps, receipt: TransactionReceipt) {
     if (!web3.utils.isAddress(currency.contractAddress)) {
       throw new Error(`Invalid ERC20 contract address: ${currency.contractAddress}`);
     }

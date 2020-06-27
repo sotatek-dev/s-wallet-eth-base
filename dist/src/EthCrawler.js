@@ -13,6 +13,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.EthCrawler = void 0;
 var sota_common_1 = require("sota-common");
 var EthCrawler = (function (_super) {
     __extends(EthCrawler, _super);

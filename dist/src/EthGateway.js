@@ -60,21 +60,14 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.EthGateway = void 0;
 var sota_common_1 = require("sota-common");
 var lru_cache_1 = __importDefault(require("lru-cache"));
 var EthTransaction_1 = require("./EthTransaction");
-var EthTypeConverter = __importStar(require("./EthTypeConverter"));
 var web3_1 = require("./web3");
-var erc20_json_1 = __importDefault(require("../config/abi/erc20.json"));
-var ethereumjs_tx_1 = __importDefault(require("ethereumjs-tx"));
+var erc20_1 = __importDefault(require("../config/abi/erc20"));
+var ethereumjs_tx_1 = require("ethereumjs-tx");
 var logger = sota_common_1.getLogger('EthGateway');
 var plusNumber = 20000000000;
 var maxGasPrice = 120000000000;
@@ -135,14 +128,13 @@ var EthGateway = (function (_super) {
     };
     EthGateway.prototype.getAverageSeedingFee = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var gasPrice, _a, _b, gasLimit, result;
-            return __generator(this, function (_c) {
-                switch (_c.label) {
-                    case 0:
-                        _b = (_a = web3_1.web3.utils).toBN;
-                        return [4, this.getGasPrice()];
+            var gasPriceString, gasPrice, gasLimit, result;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4, this.getGasPrice()];
                     case 1:
-                        gasPrice = _b.apply(_a, [_c.sent()]);
+                        gasPriceString = (_a.sent()).toString();
+                        gasPrice = web3_1.web3.utils.toBN(gasPriceString);
                         gasLimit = web3_1.web3.utils.toBN(150000);
                         result = gasPrice.mul(gasLimit);
                         return [2, new sota_common_1.BigNumber(result.toString())];
@@ -233,7 +225,7 @@ var EthGateway = (function (_super) {
             return __generator(this, function (_c) {
                 switch (_c.label) {
                     case 0:
-                        amount = web3_1.web3.utils.toBN(value);
+                        amount = web3_1.web3.utils.toBN(value.toString());
                         return [4, web3_1.web3.eth.getTransactionCount(fromAddress)];
                     case 1:
                         nonce = _c.sent();
@@ -245,7 +237,7 @@ var EthGateway = (function (_super) {
                         _gasPrice = _c.sent();
                         _c.label = 4;
                     case 4:
-                        gasPrice = web3_1.web3.utils.toBN(_gasPrice);
+                        gasPrice = web3_1.web3.utils.toBN(_gasPrice.toString());
                         gasLimit = web3_1.web3.utils.toBN(options.isConsolidate ? 21000 : 150000);
                         if (options.explicitGasLimit) {
                             gasLimit = web3_1.web3.utils.toBN(options.explicitGasLimit);
@@ -261,14 +253,15 @@ var EthGateway = (function (_super) {
                         if (balance.lt(amount.add(fee))) {
                             throw new Error("EthGateway::constructRawTransaction could not construct tx because of insufficient balance:          address=" + fromAddress + ", balance=" + balance + ", amount=" + amount + ", fee=" + fee);
                         }
-                        tx = new ethereumjs_tx_1.default({
-                            chainId: this.getChainId(),
+                        tx = new ethereumjs_tx_1.Transaction({
                             data: '',
                             gasLimit: web3_1.web3.utils.toHex(options.isConsolidate ? 21000 : 150000),
                             gasPrice: web3_1.web3.utils.toHex(gasPrice),
                             nonce: web3_1.web3.utils.toHex(nonce),
                             to: toAddress,
                             value: web3_1.web3.utils.toHex(amount),
+                        }, {
+                            chain: this.getChainId()
                         });
                         return [2, {
                                 txid: "0x" + tx.hash().toString('hex'),
@@ -279,7 +272,7 @@ var EthGateway = (function (_super) {
         });
     };
     EthGateway.prototype.reconstructRawTx = function (rawTx) {
-        var tx = new ethereumjs_tx_1.default(rawTx);
+        var tx = new ethereumjs_tx_1.Transaction(rawTx);
         return {
             txid: "0x" + tx.hash().toString('hex'),
             unsignedRaw: tx.serialize().toString('hex'),
@@ -292,7 +285,7 @@ var EthGateway = (function (_super) {
                 if (secret.startsWith('0x')) {
                     secret = secret.substr(2);
                 }
-                ethTx = new ethereumjs_tx_1.default(unsignedRaw);
+                ethTx = new ethereumjs_tx_1.Transaction(unsignedRaw);
                 privateKey = Buffer.from(secret, 'hex');
                 ethTx.sign(privateKey);
                 return [2, {
@@ -312,7 +305,7 @@ var EthGateway = (function (_super) {
                         if (!rawTx.startsWith('0x')) {
                             rawTx = '0x' + rawTx;
                         }
-                        ethTx = new ethereumjs_tx_1.default(rawTx);
+                        ethTx = new ethereumjs_tx_1.Transaction(rawTx);
                         txid = ethTx.hash().toString('hex');
                         if (!txid.startsWith('0x')) {
                             txid = '0x' + txid;
@@ -486,7 +479,7 @@ var EthGateway = (function (_super) {
                         _b.label = 1;
                     case 1:
                         _b.trys.push([1, 3, , 4]);
-                        contract = new web3_1.web3.eth.Contract(erc20_json_1.default, contractAddress);
+                        contract = new web3_1.web3.eth.Contract(erc20_1.default, contractAddress);
                         return [4, Promise.all([
                                 contract.methods.symbol().call(),
                                 contract.methods.name().call(),
@@ -525,14 +518,13 @@ var EthGateway = (function (_super) {
     };
     EthGateway.prototype.estimateFee = function (options) {
         return __awaiter(this, void 0, void 0, function () {
-            var gasPrice, _a, _b, gasLimit, fee;
-            return __generator(this, function (_c) {
-                switch (_c.label) {
-                    case 0:
-                        _b = (_a = web3_1.web3.utils).toBN;
-                        return [4, this.getGasPrice(options.useLowerNetworkFee)];
+            var gasPriceString, gasPrice, gasLimit, fee;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4, this.getGasPrice(options.useLowerNetworkFee)];
                     case 1:
-                        gasPrice = _b.apply(_a, [_c.sent()]);
+                        gasPriceString = (_a.sent()).toString();
+                        gasPrice = web3_1.web3.utils.toBN(gasPriceString);
                         gasLimit = web3_1.web3.utils.toBN(options.isConsolidate ? 21000 : 150000);
                         fee = gasLimit.mul(gasPrice);
                         return [2, new sota_common_1.BigNumber(fee.toNumber())];
@@ -542,17 +534,19 @@ var EthGateway = (function (_super) {
     };
     EthGateway.prototype._getOneBlock = function (blockNumber) {
         return __awaiter(this, void 0, void 0, function () {
-            var block, txids;
+            var block, txids, timestamp, blockProps;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4, web3_1.web3.eth.getBlock(EthTypeConverter.toBlockType(blockNumber))];
+                    case 0: return [4, web3_1.web3.eth.getBlock(blockNumber)];
                     case 1:
                         block = _a.sent();
                         if (!block) {
                             return [2, null];
                         }
-                        txids = block.transactions.map(function (tx) { return (tx.hash ? tx.hash : tx.toString()); });
-                        return [2, new sota_common_1.Block(Object.assign({}, block), txids)];
+                        txids = block.transactions;
+                        timestamp = typeof block.timestamp === 'string' ? parseInt(block.timestamp, 10) : block.timestamp;
+                        blockProps = Object.assign({}, block, { timestamp: timestamp });
+                        return [2, new sota_common_1.Block(blockProps, txids)];
                 }
             });
         });

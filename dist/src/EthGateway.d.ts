@@ -1,6 +1,4 @@
-import * as web3_accounts from 'web3/eth/accounts';
-import * as web3_types from 'web3/eth/types';
-import * as web3_types2 from 'web3/types';
+import { Account, Transaction, TransactionReceipt } from 'web3-core';
 import { Block, AccountBasedGateway, IRawTransaction, ISignedRawTransaction, ISubmittedTransaction, TransactionStatus, Address, BigNumber, IErc20Token } from 'sota-common';
 import { EthTransaction } from './EthTransaction';
 export declare class EthGateway extends AccountBasedGateway {
@@ -9,8 +7,8 @@ export declare class EthGateway extends AccountBasedGateway {
     getParallelNetworkRequestLimit(): number;
     getAverageSeedingFee(): Promise<BigNumber>;
     normalizeAddress(address: string): string;
-    createAccountAsync(): Promise<web3_accounts.Account>;
-    getAccountFromPrivateKey(privateKey: string): Promise<web3_accounts.Account>;
+    createAccountAsync(): Promise<Account>;
+    getAccountFromPrivateKey(privateKey: string): Promise<Account>;
     isValidAddressAsync(address: string): Promise<boolean>;
     getAddressBalance(address: string): Promise<BigNumber>;
     getBlockCount(): Promise<number>;
@@ -25,8 +23,8 @@ export declare class EthGateway extends AccountBasedGateway {
     signRawTransaction(unsignedRaw: string, secret: string): Promise<ISignedRawTransaction>;
     sendRawTransaction(rawTx: string, retryCount?: number): Promise<ISubmittedTransaction>;
     getTransactionStatus(txid: string): Promise<TransactionStatus>;
-    getRawTransaction(txid: string): Promise<web3_types.Transaction>;
-    getRawTransactionReceipt(txid: string): Promise<web3_types2.TransactionReceipt>;
+    getRawTransaction(txid: string): Promise<Transaction>;
+    getRawTransactionReceipt(txid: string): Promise<TransactionReceipt>;
     getErc20TokenInfo(contractAddress: string): Promise<IErc20Token>;
     getChainId(): number;
     estimateFee(options: {

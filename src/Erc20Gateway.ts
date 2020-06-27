@@ -1,8 +1,8 @@
 import EthGateway from './EthGateway';
-import Contract from 'web3/eth/contract';
+import { Contract } from 'web3-eth-contract';
 import { web3 } from './web3';
 import _ from 'lodash';
-import EthereumTx from 'ethereumjs-tx';
+import { Transaction as EthereumTx } from 'ethereumjs-tx';
 import {
   IRawTransaction,
   IErc20Token,
@@ -21,7 +21,7 @@ import {
   IMultiEntriesTxEntry,
 } from 'sota-common';
 import Erc20Transaction from './Erc20Transaction';
-import ERC20ABI from '../config/abi/erc20.json';
+import ERC20ABI from '../config/abi/erc20';
 
 const logger = getLogger('Erc20Gateway');
 
@@ -62,7 +62,7 @@ export class Erc20Gateway extends AccountBasedGateway {
       explicitGasLimit?: number;
     }
   ): Promise<IRawTransaction> {
-    const amount = web3.utils.toBN(value);
+    const amount = web3.utils.toBN(value.toString());
     const nonce = await web3.eth.getTransactionCount(fromAddress);
     let _gasPrice: BigNumber;
     if (options.explicitGasPrice) {
@@ -70,7 +70,7 @@ export class Erc20Gateway extends AccountBasedGateway {
     } else {
       _gasPrice = await this._ethGateway.getGasPrice(options.useLowerNetworkFee);
     }
-    const gasPrice = web3.utils.toBN(_gasPrice);
+    const gasPrice = web3.utils.toBN(_gasPrice.toString());
 
     let _gasLimit: number;
     if (options.explicitGasLimit) {
@@ -91,7 +91,8 @@ export class Erc20Gateway extends AccountBasedGateway {
 
     // Check whether the balance of hot wallet is enough to send
     const ethBalance = web3.utils.toBN((await web3.eth.getBalance(fromAddress)).toString());
-    const balance = web3.utils.toBN(await this.getAddressBalance(fromAddress));
+    const erc20BalanceString = (await this.getAddressBalance(fromAddress)).toString();
+    const balance = web3.utils.toBN(erc20BalanceString);
     if (balance.lt(amount)) {
       throw new Error(
         `Could not construct tx because of insufficient balance: address=${fromAddress}, amount=${amount}, fee=${fee}`
@@ -105,13 +106,14 @@ export class Erc20Gateway extends AccountBasedGateway {
     }
 
     const tx = new EthereumTx({
-      chainId: this._ethGateway.getChainId(),
       data: this._contract.methods.transfer(toAddress, amount.toString()).encodeABI(),
       gasLimit: web3.utils.toHex(gasLimit),
       gasPrice: web3.utils.toHex(gasPrice),
       nonce: web3.utils.toHex(nonce),
       to: this._currency.contractAddress,
       value: web3.utils.toHex(0),
+    }, {
+      chain: this._ethGateway.getChainId()
     });
 
     return {

@@ -61,12 +61,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.Erc20Gateway = void 0;
 var web3_1 = require("./web3");
 var lodash_1 = __importDefault(require("lodash"));
-var ethereumjs_tx_1 = __importDefault(require("ethereumjs-tx"));
+var ethereumjs_tx_1 = require("ethereumjs-tx");
 var sota_common_1 = require("sota-common");
 var Erc20Transaction_1 = __importDefault(require("./Erc20Transaction"));
-var erc20_json_1 = __importDefault(require("../config/abi/erc20.json"));
+var erc20_1 = __importDefault(require("../config/abi/erc20"));
 var logger = sota_common_1.getLogger('Erc20Gateway');
 sota_common_1.CurrencyRegistry.onERC20TokenRegistered(function (token) {
     logger.info("Register Erc20Gateway to the registry: " + token.symbol);
@@ -76,7 +77,7 @@ var Erc20Gateway = (function (_super) {
     __extends(Erc20Gateway, _super);
     function Erc20Gateway(currency) {
         var _this = _super.call(this, currency) || this;
-        _this._contract = new web3_1.web3.eth.Contract(erc20_json_1.default, currency.contractAddress);
+        _this._contract = new web3_1.web3.eth.Contract(erc20_1.default, currency.contractAddress);
         _this._ethGateway = sota_common_1.GatewayRegistry.getGatewayInstance(sota_common_1.CurrencyRegistry.Ethereum);
         return _this;
     }
@@ -102,23 +103,23 @@ var Erc20Gateway = (function (_super) {
     };
     Erc20Gateway.prototype.constructRawTransaction = function (fromAddress, toAddress, value, options) {
         return __awaiter(this, void 0, void 0, function () {
-            var amount, nonce, _gasPrice, gasPrice, _gasLimit, gasLimit, fee, ethBalance, _a, _b, balance, _c, _d, tx;
-            return __generator(this, function (_e) {
-                switch (_e.label) {
+            var amount, nonce, _gasPrice, gasPrice, _gasLimit, gasLimit, fee, ethBalance, _a, _b, erc20BalanceString, balance, tx;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
                     case 0:
-                        amount = web3_1.web3.utils.toBN(value);
+                        amount = web3_1.web3.utils.toBN(value.toString());
                         return [4, web3_1.web3.eth.getTransactionCount(fromAddress)];
                     case 1:
-                        nonce = _e.sent();
+                        nonce = _c.sent();
                         if (!options.explicitGasPrice) return [3, 2];
                         _gasPrice = new sota_common_1.BigNumber(options.explicitGasPrice);
                         return [3, 4];
                     case 2: return [4, this._ethGateway.getGasPrice(options.useLowerNetworkFee)];
                     case 3:
-                        _gasPrice = _e.sent();
-                        _e.label = 4;
+                        _gasPrice = _c.sent();
+                        _c.label = 4;
                     case 4:
-                        gasPrice = web3_1.web3.utils.toBN(_gasPrice);
+                        gasPrice = web3_1.web3.utils.toBN(_gasPrice.toString());
                         if (!options.explicitGasLimit) return [3, 5];
                         _gasLimit = options.explicitGasLimit;
                         return [3, 7];
@@ -126,36 +127,37 @@ var Erc20Gateway = (function (_super) {
                             .transfer(toAddress, amount.toString())
                             .estimateGas({ from: fromAddress })];
                     case 6:
-                        _gasLimit = _e.sent();
+                        _gasLimit = _c.sent();
                         if (_gasLimit > 300000) {
                             _gasLimit = 300000;
                         }
-                        _e.label = 7;
+                        _c.label = 7;
                     case 7:
                         gasLimit = web3_1.web3.utils.toBN(_gasLimit);
                         fee = gasLimit.mul(gasPrice);
                         _b = (_a = web3_1.web3.utils).toBN;
                         return [4, web3_1.web3.eth.getBalance(fromAddress)];
                     case 8:
-                        ethBalance = _b.apply(_a, [(_e.sent()).toString()]);
-                        _d = (_c = web3_1.web3.utils).toBN;
+                        ethBalance = _b.apply(_a, [(_c.sent()).toString()]);
                         return [4, this.getAddressBalance(fromAddress)];
                     case 9:
-                        balance = _d.apply(_c, [_e.sent()]);
+                        erc20BalanceString = (_c.sent()).toString();
+                        balance = web3_1.web3.utils.toBN(erc20BalanceString);
                         if (balance.lt(amount)) {
                             throw new Error("Could not construct tx because of insufficient balance: address=" + fromAddress + ", amount=" + amount + ", fee=" + fee);
                         }
                         if (ethBalance.lt(fee)) {
                             throw new Error("Could not construct tx because of lacking fee: address=" + fromAddress + ", fee=" + fee + ", ethBalance=" + ethBalance);
                         }
-                        tx = new ethereumjs_tx_1.default({
-                            chainId: this._ethGateway.getChainId(),
+                        tx = new ethereumjs_tx_1.Transaction({
                             data: this._contract.methods.transfer(toAddress, amount.toString()).encodeABI(),
                             gasLimit: web3_1.web3.utils.toHex(gasLimit),
                             gasPrice: web3_1.web3.utils.toHex(gasPrice),
                             nonce: web3_1.web3.utils.toHex(nonce),
                             to: this._currency.contractAddress,
                             value: web3_1.web3.utils.toHex(0),
+                        }, {
+                            chain: this._ethGateway.getChainId()
                         });
                         return [2, {
                                 txid: "0x" + tx.hash().toString('hex'),
@@ -240,7 +242,7 @@ var Erc20Gateway = (function (_super) {
                         if (!logs || !logs.length) {
                             return [2, null];
                         }
-                        inputs = lodash_1.default.find(erc20_json_1.default, function (abi) { return abi.type === 'event' && abi.name === 'Transfer'; }).inputs;
+                        inputs = lodash_1.default.find(erc20_1.default, function (abi) { return abi.type === 'event' && abi.name === 'Transfer'; }).inputs;
                         vIns = [];
                         vOuts = [];
                         logs.forEach(function (log) {

@@ -1,13 +1,29 @@
-[
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = [
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "name",
+        "outputs": [
+            {
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
     {
         "constant": false,
         "inputs": [
             {
-                "name": "spender",
+                "name": "_spender",
                 "type": "address"
             },
             {
-                "name": "value",
+                "name": "_value",
                 "type": "uint256"
             }
         ],
@@ -19,6 +35,7 @@
             }
         ],
         "payable": false,
+        "stateMutability": "nonpayable",
         "type": "function"
     },
     {
@@ -32,21 +49,22 @@
             }
         ],
         "payable": false,
+        "stateMutability": "view",
         "type": "function"
     },
     {
         "constant": false,
         "inputs": [
             {
-                "name": "from",
+                "name": "_from",
                 "type": "address"
             },
             {
-                "name": "to",
+                "name": "_to",
                 "type": "address"
             },
             {
-                "name": "value",
+                "name": "_value",
                 "type": "uint256"
             }
         ],
@@ -58,38 +76,65 @@
             }
         ],
         "payable": false,
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "decimals",
+        "outputs": [
+            {
+                "name": "",
+                "type": "uint8"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
         "type": "function"
     },
     {
         "constant": true,
         "inputs": [
             {
-                "name": "who",
+                "name": "_owner",
                 "type": "address"
             }
         ],
         "name": "balanceOf",
         "outputs": [
             {
-                "name": "",
+                "name": "balance",
                 "type": "uint256"
             }
         ],
         "payable": false,
+        "stateMutability": "view",
         "type": "function"
     },
-    { "constant": true, "inputs": [], "name": "decimals", "outputs": [{ "name": "", "type": "uint8" }], "payable": false, "type": "function" },
-    { "constant": true, "inputs": [], "name": "name", "outputs": [{ "name": "", "type": "string" }], "payable": false, "type": "function" },
-    { "constant": true, "inputs": [], "name": "symbol", "outputs": [{ "name": "", "type": "string" }], "payable": false, "type": "function" },
+    {
+        "constant": true,
+        "inputs": [],
+        "name": "symbol",
+        "outputs": [
+            {
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "payable": false,
+        "stateMutability": "view",
+        "type": "function"
+    },
     {
         "constant": false,
         "inputs": [
             {
-                "name": "to",
+                "name": "_to",
                 "type": "address"
             },
             {
-                "name": "value",
+                "name": "_value",
                 "type": "uint256"
             }
         ],
@@ -101,43 +146,18 @@
             }
         ],
         "payable": false,
-        "type": "function"
-    },
-    {
-        "constant": false,
-        "inputs": [
-            {
-                "name": "spender",
-                "type": "address"
-            },
-            {
-                "name": "value",
-                "type": "uint256"
-            },
-            {
-                "name": "extraData",
-                "type": "bytes"
-            }
-        ],
-        "name": "approveAndCall",
-        "outputs": [
-            {
-                "name": "",
-                "type": "bool"
-            }
-        ],
-        "payable": false,
+        "stateMutability": "nonpayable",
         "type": "function"
     },
     {
         "constant": true,
         "inputs": [
             {
-                "name": "owner",
+                "name": "_owner",
                 "type": "address"
             },
             {
-                "name": "spender",
+                "name": "_spender",
                 "type": "address"
             }
         ],
@@ -149,7 +169,13 @@
             }
         ],
         "payable": false,
+        "stateMutability": "view",
         "type": "function"
+    },
+    {
+        "payable": true,
+        "stateMutability": "payable",
+        "type": "fallback"
     },
     {
         "anonymous": false,
@@ -195,4 +221,5 @@
         "name": "Transfer",
         "type": "event"
     }
-]
+];
+//# sourceMappingURL=erc20.js.map

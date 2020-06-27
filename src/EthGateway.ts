@@ -1,7 +1,5 @@
 import _ from 'lodash';
-import * as web3_accounts from 'web3/eth/accounts';
-import * as web3_types from 'web3/eth/types';
-import * as web3_types2 from 'web3/types';
+import { Account, Transaction, TransactionReceipt } from 'web3-core';
 import {
   Block,
   AccountBasedGateway,
@@ -25,10 +23,9 @@ import {
 } from 'sota-common';
 import LRU from 'lru-cache';
 import { EthTransaction } from './EthTransaction';
-import * as EthTypeConverter from './EthTypeConverter';
 import { web3, infuraWeb3 } from './web3';
-import ERC20ABI from '../config/abi/erc20.json';
-import EthereumTx from 'ethereumjs-tx';
+import ERC20ABI from '../config/abi/erc20';
+import { Transaction as EthereumTx } from 'ethereumjs-tx';
 
 const logger = getLogger('EthGateway');
 const plusNumber = 20000000000; // 20 gwei
@@ -39,11 +36,11 @@ const _cacheBlockNumber = {
   isRequesting: false,
 };
 
-const _cacheRawTxByHash: LRU<string, web3_types.Transaction> = new LRU({
+const _cacheRawTxByHash: LRU<string, Transaction> = new LRU({
   max: 1024,
   maxAge: 1000 * 60 * 5,
 });
-const _cacheRawTxReceipt: LRU<string, web3_types2.TransactionReceipt> = new LRU({
+const _cacheRawTxReceipt: LRU<string, TransactionReceipt> = new LRU({
   max: 1024,
   maxAge: 1000 * 60 * 5,
 });
@@ -96,7 +93,8 @@ export class EthGateway extends AccountBasedGateway {
   }
 
   public async getAverageSeedingFee(): Promise<BigNumber> {
-    const gasPrice = web3.utils.toBN(await this.getGasPrice());
+    const gasPriceString = (await this.getGasPrice()).toString();
+    const gasPrice = web3.utils.toBN(gasPriceString);
     const gasLimit = web3.utils.toBN(150000); // For ETH transaction 21000 gas is fixed
     const result = gasPrice.mul(gasLimit);
     return new BigNumber(result.toString());
@@ -120,11 +118,11 @@ export class EthGateway extends AccountBasedGateway {
    *
    * @returns {IAccount} the account object
    */
-  public async createAccountAsync(): Promise<web3_accounts.Account> {
+  public async createAccountAsync(): Promise<Account> {
     return web3.eth.accounts.create();
   }
 
-  public async getAccountFromPrivateKey(privateKey: string): Promise<web3_accounts.Account> {
+  public async getAccountFromPrivateKey(privateKey: string): Promise<Account> {
     if (privateKey.indexOf('0x') < 0) {
       privateKey = '0x' + privateKey;
     }
@@ -200,7 +198,7 @@ export class EthGateway extends AccountBasedGateway {
       explicitGasLimit?: number,
     }
   ): Promise<IRawTransaction> {
-    let amount = web3.utils.toBN(value);
+    let amount = web3.utils.toBN(value.toString());
     const nonce = await web3.eth.getTransactionCount(fromAddress);
     let _gasPrice: BigNumber;
     if (options.explicitGasPrice) {
@@ -208,7 +206,7 @@ export class EthGateway extends AccountBasedGateway {
     } else {
       _gasPrice = await this.getGasPrice(options.useLowerNetworkFee);
     }
-    const gasPrice = web3.utils.toBN(_gasPrice);
+    const gasPrice = web3.utils.toBN(_gasPrice.toString());
 
     let gasLimit = web3.utils.toBN(options.isConsolidate ? 21000 : 150000); // Maximum gas allow for Ethereum transaction
     if (options.explicitGasLimit) {
@@ -231,13 +229,14 @@ export class EthGateway extends AccountBasedGateway {
     }
 
     const tx = new EthereumTx({
-      chainId: this.getChainId(),
       data: '',
       gasLimit: web3.utils.toHex(options.isConsolidate ? 21000 : 150000),
       gasPrice: web3.utils.toHex(gasPrice),
       nonce: web3.utils.toHex(nonce),
       to: toAddress,
       value: web3.utils.toHex(amount),
+    }, {
+      chain: this.getChainId()
     });
 
     return {
@@ -354,10 +353,10 @@ export class EthGateway extends AccountBasedGateway {
     return TransactionStatus.COMPLETED;
   }
 
-  public async getRawTransaction(txid: string): Promise<web3_types.Transaction> {
+  public async getRawTransaction(txid: string): Promise<Transaction> {
     const key = '_cacheRawTxByHash_' + this.getCurrency().symbol + txid;
     let redisClient;
-    let cachedTx: web3_types.Transaction;
+    let cachedTx: Transaction;
     if (!!EnvConfigRegistry.isUsingRedis()) {
       redisClient = getRedisClient();
       const cachedData = await redisClient.get(key);
@@ -398,10 +397,10 @@ export class EthGateway extends AccountBasedGateway {
     return tx;
   }
 
-  public async getRawTransactionReceipt(txid: string): Promise<web3_types2.TransactionReceipt> {
+  public async getRawTransactionReceipt(txid: string): Promise<TransactionReceipt> {
     const key = '_cacheRawTxReceipt_' + this.getCurrency().symbol + txid;
     let redisClient;
-    let cachedReceipt: web3_types2.TransactionReceipt;
+    let cachedReceipt: TransactionReceipt;
     if (!!EnvConfigRegistry.isUsingRedis()) {
       redisClient = getRedisClient();
       const cachedData = await redisClient.get(key);
@@ -474,7 +473,8 @@ export class EthGateway extends AccountBasedGateway {
   }
 
   public async estimateFee(options: { isConsolidate: boolean; useLowerNetworkFee?: boolean }): Promise<BigNumber> {
-    const gasPrice = web3.utils.toBN(await this.getGasPrice(options.useLowerNetworkFee));
+    const gasPriceString = (await this.getGasPrice(options.useLowerNetworkFee)).toString();
+    const gasPrice = web3.utils.toBN(gasPriceString);
     const gasLimit = web3.utils.toBN(options.isConsolidate ? 21000 : 150000); // Maximum gas allow for Ethereum transaction
     const fee = gasLimit.mul(gasPrice);
     return new BigNumber(fee.toNumber());
@@ -487,13 +487,15 @@ export class EthGateway extends AccountBasedGateway {
    * @returns {Block} block: the block detail
    */
   protected async _getOneBlock(blockNumber: string | number): Promise<Block> {
-    const block = await web3.eth.getBlock(EthTypeConverter.toBlockType(blockNumber));
+    const block = await web3.eth.getBlock(blockNumber);
     if (!block) {
       return null;
     }
 
-    const txids = block.transactions.map(tx => (tx.hash ? tx.hash : tx.toString()));
-    return new Block(Object.assign({}, block), txids);
+    const txids = block.transactions;
+    const timestamp: number = typeof block.timestamp === 'string' ? parseInt(block.timestamp, 10) : block.timestamp;
+    const blockProps = Object.assign({}, block, { timestamp })
+    return new Block(blockProps, txids);
   }
 
   /**

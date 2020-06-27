@@ -13,6 +13,7 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.EthTransaction = void 0;
 var sota_common_1 = require("sota-common");
 var web3_1 = require("./web3");
 var EthTransaction = (function (_super) {

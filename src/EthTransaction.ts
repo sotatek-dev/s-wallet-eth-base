@@ -1,18 +1,17 @@
 import { BlockHeader, BigNumber, AccountBasedTransaction, BlockchainPlatform, CurrencyRegistry } from 'sota-common';
 import { web3 } from './web3';
-import * as web3_types from 'web3/types';
-import * as eth_types from 'web3/eth/types';
+import { Transaction, TransactionReceipt } from 'web3-core';
 
 export class EthTransaction extends AccountBasedTransaction {
   public readonly receiptStatus: boolean;
   public readonly block: BlockHeader;
-  public readonly receipt: web3_types.TransactionReceipt;
-  public readonly originalTx: eth_types.Transaction;
+  public readonly receipt: TransactionReceipt;
+  public readonly originalTx: Transaction;
 
   constructor(
-    tx: eth_types.Transaction,
+    tx: Transaction,
     block: BlockHeader,
-    receipt: web3_types.TransactionReceipt,
+    receipt: TransactionReceipt,
     lastNetworkBlockNumber: number
   ) {
     const currency = CurrencyRegistry.getOneNativeCurrency(BlockchainPlatform.Ethereum);
