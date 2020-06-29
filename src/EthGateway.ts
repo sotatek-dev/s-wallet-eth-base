@@ -308,14 +308,34 @@ export class EthGateway extends AccountBasedGateway {
       logger.info(`EthGateway::sendRawTransaction infura_txid=${infuraReceipt.transactionHash}`);
       return { txid: receipt.transactionHash };
     } catch (e) {
+      // Former format of error message when sending duplicate transaction
       if (e.toString().indexOf('known transaction') > -1) {
         logger.warn(e.toString());
         return { txid };
       }
 
+      // New format of error message when sending duplicate transaction
+      if (e.toString().indexOf('already known') > -1) {
+        logger.warn(e.toString());
+        return { txid };
+      }
+
+      // The receipt status is failed, but transaction is actually submitted to network successfully
       if (e.toString().indexOf('Transaction has been reverted by the EVM') > -1) {
         logger.warn(e.toString());
         return { txid };
+      }
+
+      // If `nonce too low` error is returned. Need to double check whether the transaction is confirmed
+      if (e.toString().indexOf('nonce too low') > -1) {
+        const tx = await this.getOneTransaction(txid);
+
+        // If transaction is confirmed, it means the broadcast was successful before
+        if (tx && tx.confirmations) {
+          return { txid };
+        }
+
+        throw e;
       }
 
       if (retryCount + 1 > 5) {
