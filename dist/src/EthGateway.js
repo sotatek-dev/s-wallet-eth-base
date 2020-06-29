@@ -305,7 +305,7 @@ var EthGateway = (function (_super) {
     };
     EthGateway.prototype.sendRawTransaction = function (rawTx, retryCount) {
         return __awaiter(this, void 0, void 0, function () {
-            var ethTx, txid, _a, receipt, infuraReceipt, e_1;
+            var ethTx, txid, _a, receipt, infuraReceipt, e_1, tx;
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
@@ -322,7 +322,7 @@ var EthGateway = (function (_super) {
                         }
                         _b.label = 1;
                     case 1:
-                        _b.trys.push([1, 3, , 4]);
+                        _b.trys.push([1, 3, , 6]);
                         return [4, Promise.all([
                                 web3_1.web3.eth.sendSignedTransaction(rawTx),
                                 web3_1.infuraWeb3.eth.sendSignedTransaction(rawTx),
@@ -337,16 +337,29 @@ var EthGateway = (function (_super) {
                             logger.warn(e_1.toString());
                             return [2, { txid: txid }];
                         }
+                        if (e_1.toString().indexOf('already known') > -1) {
+                            logger.warn(e_1.toString());
+                            return [2, { txid: txid }];
+                        }
                         if (e_1.toString().indexOf('Transaction has been reverted by the EVM') > -1) {
                             logger.warn(e_1.toString());
                             return [2, { txid: txid }];
                         }
+                        if (!(e_1.toString().indexOf('nonce too low') > -1)) return [3, 5];
+                        return [4, this.getOneTransaction(txid)];
+                    case 4:
+                        tx = _b.sent();
+                        if (tx && tx.confirmations) {
+                            return [2, { txid: txid }];
+                        }
+                        throw e_1;
+                    case 5:
                         if (retryCount + 1 > 5) {
                             logger.error("Too many fails sending txid=" + txid + " tx=" + JSON.stringify(ethTx.toJSON()) + " err=" + e_1.toString());
                             throw e_1;
                         }
                         return [2, this.sendRawTransaction(rawTx, retryCount + 1)];
-                    case 4: return [2];
+                    case 6: return [2];
                 }
             });
         });
