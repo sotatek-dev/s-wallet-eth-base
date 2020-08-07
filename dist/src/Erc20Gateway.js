@@ -127,6 +127,9 @@ var Erc20Gateway = (function (_super) {
                             .estimateGas({ from: fromAddress })];
                     case 6:
                         _gasLimit = _e.sent();
+                        if (_gasLimit < 150000) {
+                            _gasLimit = 150000;
+                        }
                         if (_gasLimit > 300000) {
                             _gasLimit = 300000;
                         }
