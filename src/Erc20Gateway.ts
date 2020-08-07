@@ -80,6 +80,10 @@ export class Erc20Gateway extends AccountBasedGateway {
         .transfer(toAddress, amount.toString())
         .estimateGas({ from: fromAddress });
 
+      if (_gasLimit < 150000) {
+        _gasLimit = 150000;
+      }
+
       // Fix maximum gas limit is 300,000 to prevent draining attack
       if (_gasLimit > 300000) {
         _gasLimit = 300000;
