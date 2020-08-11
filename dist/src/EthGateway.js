@@ -548,7 +548,7 @@ var EthGateway = (function (_super) {
                         gasPrice = _b.apply(_a, [_c.sent()]);
                         gasLimit = web3_1.web3.utils.toBN(options.isConsolidate ? 21000 : 150000);
                         fee = gasLimit.mul(gasPrice);
-                        return [2, new sota_common_1.BigNumber(fee.toNumber())];
+                        return [2, new sota_common_1.BigNumber(fee.toString())];
                 }
             });
         });
