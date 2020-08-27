@@ -19,7 +19,7 @@
     "lru-cache": "5.1.1",
     "p-limit": "2.2.0",
     "sota-common": "../sota-common",
-    "web3": "1.0.0-beta.37"
+    "web3": "1.2.0"
   },
   "devDependencies": {
     "@types/chai": "4.1.7",
