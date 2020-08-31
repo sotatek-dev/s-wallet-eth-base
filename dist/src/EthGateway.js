@@ -101,7 +101,7 @@ var EthGateway = (function (_super) {
     }
     EthGateway.prototype.getGasPrice = function (useLowerNetworkFee) {
         return __awaiter(this, void 0, void 0, function () {
-            var baseGasPrice, _a, finalGasPrice, mulNumber, multiplyGasPrice, plusGasPrice;
+            var baseGasPrice, _a, finalGasPrice, configMaxGasPrice, mulNumber, multiplyGasPrice, plusGasPrice;
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
@@ -110,6 +110,10 @@ var EthGateway = (function (_super) {
                     case 1:
                         baseGasPrice = new (_a.apply(sota_common_1.BigNumber, [void 0, _b.sent()]))();
                         finalGasPrice = new sota_common_1.BigNumber(maxGasPrice);
+                        configMaxGasPrice = parseInt(sota_common_1.EnvConfigRegistry.getCustomEnvConfig('ETH_MAX_GAS_PRICE'), 10);
+                        if (!isNaN(configMaxGasPrice)) {
+                            finalGasPrice = new sota_common_1.BigNumber(configMaxGasPrice);
+                        }
                         mulNumber = 5;
                         if (!!useLowerNetworkFee) {
                             mulNumber = 2;
