@@ -1,8 +1,11 @@
 import util from 'util';
-import { BaseWebServer, BlockchainPlatform, override, getLogger, EnvConfigRegistry } from 'sota-common';
+import { BaseWebServer, BlockchainPlatform, override, getLogger, EnvConfigRegistry, WebServiceStatus } from 'sota-common';
 import EthGateway from './EthGateway';
+import axios from 'axios';
 
 const logger = getLogger('EthWebServer');
+const GET_LATEST_BLOCK_EXTERNAL_API = 'https://api.blockcypher.com/v1/eth/main';
+const SAFETY_THRESHOLD = 1440 // 6h/eth-average-block-time(15s)
 
 export class EthWebServer extends BaseWebServer {
   public constructor() {
@@ -15,6 +18,25 @@ export class EthWebServer extends BaseWebServer {
     const tokenInfo = await gateway.getErc20TokenInfo(contractAddress);
     const result = Object.assign({}, tokenInfo, { network: EnvConfigRegistry.getNetwork() });
     res.json(result);
+  }
+
+  @override
+  protected async checkHealth() {
+    const gateway = this.getGateway(this._currency.symbol) as EthGateway;
+
+    try {
+      const externalLatestBlockInfo = await axios.get(GET_LATEST_BLOCK_EXTERNAL_API);
+      const externalLatestBlockNum = externalLatestBlockInfo.data.height;
+      const localLatestBlockNum = await gateway.getBlockCount();
+
+      const differentBlockNum = externalLatestBlockNum - localLatestBlockNum;
+      const serviceReliability = (differentBlockNum < SAFETY_THRESHOLD) ? true : false;
+      const status = (differentBlockNum < SAFETY_THRESHOLD) ? WebServiceStatus.OK : WebServiceStatus.WARN;
+
+      return { webService: { status, serviceReliability, differentBlockNum } };
+    } catch (e) {
+      return { webService: { status: WebServiceStatus.WARN, description: e.message, } };
+    }
   }
 
   @override
