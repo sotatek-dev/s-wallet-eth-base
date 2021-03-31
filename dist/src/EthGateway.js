@@ -3,7 +3,7 @@ var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
         extendStatics = Object.setPrototypeOf ||
             ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
         return extendStatics(d, b);
     };
     return function (d, b) {
@@ -12,11 +12,30 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
 };
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
@@ -60,21 +79,16 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.EthGateway = void 0;
 var sota_common_1 = require("sota-common");
 var lru_cache_1 = __importDefault(require("lru-cache"));
 var EthTransaction_1 = require("./EthTransaction");
 var EthTypeConverter = __importStar(require("./EthTypeConverter"));
 var web3_1 = require("./web3");
 var erc20_json_1 = __importDefault(require("../config/abi/erc20.json"));
-var ethereumjs_tx_1 = __importDefault(require("ethereumjs-tx"));
+var ethereumjs = __importStar(require("ethereumjs-tx"));
+var EthereumTx = ethereumjs.Transaction;
 var logger = sota_common_1.getLogger('EthGateway');
 var plusNumber = 20000000000;
 var maxGasPrice = 120000000000;
@@ -261,14 +275,13 @@ var EthGateway = (function (_super) {
                         if (balance.lt(amount.add(fee))) {
                             throw new Error("EthGateway::constructRawTransaction could not construct tx because of insufficient balance:          address=" + fromAddress + ", balance=" + balance + ", amount=" + amount + ", fee=" + fee);
                         }
-                        tx = new ethereumjs_tx_1.default({
-                            chainId: this.getChainId(),
-                            data: '',
+                        tx = new EthereumTx({
                             gasLimit: web3_1.web3.utils.toHex(options.isConsolidate ? 21000 : 150000),
                             gasPrice: web3_1.web3.utils.toHex(gasPrice),
                             nonce: web3_1.web3.utils.toHex(nonce),
                             to: toAddress,
                             value: web3_1.web3.utils.toHex(amount),
+                            data: '0x',
                         });
                         return [2, {
                                 txid: "0x" + tx.hash().toString('hex'),
@@ -279,7 +292,7 @@ var EthGateway = (function (_super) {
         });
     };
     EthGateway.prototype.reconstructRawTx = function (rawTx) {
-        var tx = new ethereumjs_tx_1.default(rawTx);
+        var tx = new EthereumTx(rawTx);
         return {
             txid: "0x" + tx.hash().toString('hex'),
             unsignedRaw: tx.serialize().toString('hex'),
@@ -292,7 +305,7 @@ var EthGateway = (function (_super) {
                 if (secret.startsWith('0x')) {
                     secret = secret.substr(2);
                 }
-                ethTx = new ethereumjs_tx_1.default(unsignedRaw);
+                ethTx = new EthereumTx(unsignedRaw, { chain: this.getChainName() });
                 privateKey = Buffer.from(secret, 'hex');
                 ethTx.sign(privateKey);
                 return [2, {
@@ -312,7 +325,7 @@ var EthGateway = (function (_super) {
                         if (!rawTx.startsWith('0x')) {
                             rawTx = '0x' + rawTx;
                         }
-                        ethTx = new ethereumjs_tx_1.default(rawTx);
+                        ethTx = new EthereumTx(rawTx, { chain: this.getChainName() });
                         txid = ethTx.hash().toString('hex');
                         if (!txid.startsWith('0x')) {
                             txid = '0x' + txid;
@@ -535,6 +548,10 @@ var EthGateway = (function (_super) {
     EthGateway.prototype.getChainId = function () {
         var config = sota_common_1.CurrencyRegistry.getCurrencyConfig(this._currency);
         return Number(config.chainId);
+    };
+    EthGateway.prototype.getChainName = function () {
+        var config = sota_common_1.CurrencyRegistry.getCurrencyConfig(this._currency);
+        return config.chainName;
     };
     EthGateway.prototype.estimateFee = function (options) {
         return __awaiter(this, void 0, void 0, function () {

@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.infuraWeb3 = exports.web3 = void 0;
 var Web3 = require("web3");
 var sota_common_1 = require("sota-common");
 var logger = sota_common_1.getLogger('web3');

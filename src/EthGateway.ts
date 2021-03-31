@@ -28,8 +28,9 @@ import { EthTransaction } from './EthTransaction';
 import * as EthTypeConverter from './EthTypeConverter';
 import { web3, infuraWeb3 } from './web3';
 import ERC20ABI from '../config/abi/erc20.json';
-import EthereumTx from 'ethereumjs-tx';
+import * as ethereumjs from 'ethereumjs-tx';
 
+const EthereumTx = ethereumjs.Transaction;
 const logger = getLogger('EthGateway');
 const plusNumber = 20000000000; // 20 gwei
 const maxGasPrice = 120000000000; // 120 gwei
@@ -231,13 +232,12 @@ export class EthGateway extends AccountBasedGateway {
     }
 
     const tx = new EthereumTx({
-      chainId: this.getChainId(),
-      data: '',
       gasLimit: web3.utils.toHex(options.isConsolidate ? 21000 : 150000),
       gasPrice: web3.utils.toHex(gasPrice),
       nonce: web3.utils.toHex(nonce),
       to: toAddress,
       value: web3.utils.toHex(amount),
+      data: '0x',
     });
 
     return {
@@ -268,7 +268,7 @@ export class EthGateway extends AccountBasedGateway {
       secret = secret.substr(2);
     }
 
-    const ethTx = new EthereumTx(unsignedRaw);
+    const ethTx = new EthereumTx(unsignedRaw, { chain: this.getChainName()});
     const privateKey = Buffer.from(secret, 'hex');
     ethTx.sign(privateKey);
 
@@ -290,7 +290,7 @@ export class EthGateway extends AccountBasedGateway {
       rawTx = '0x' + rawTx;
     }
 
-    const ethTx = new EthereumTx(rawTx);
+    const ethTx = new EthereumTx(rawTx, { chain: this.getChainName()});
     let txid = ethTx.hash().toString('hex');
     if (!txid.startsWith('0x')) {
       txid = '0x' + txid;
@@ -491,6 +491,11 @@ export class EthGateway extends AccountBasedGateway {
   public getChainId(): number {
     const config = CurrencyRegistry.getCurrencyConfig(this._currency);
     return Number(config.chainId);
+  }
+
+  public getChainName(): string {
+    const config = CurrencyRegistry.getCurrencyConfig(this._currency);
+    return config.chainName;
   }
 
   public async estimateFee(options: { isConsolidate: boolean; useLowerNetworkFee?: boolean }): Promise<BigNumber> {
