@@ -2,7 +2,7 @@ import EthGateway from './EthGateway';
 import Contract from 'web3/eth/contract';
 import { web3 } from './web3';
 import _ from 'lodash';
-import EthereumTx from 'ethereumjs-tx';
+import * as ethereumjs from 'ethereumjs-tx';
 import {
   IRawTransaction,
   IErc20Token,
@@ -24,6 +24,7 @@ import Erc20Transaction from './Erc20Transaction';
 import ERC20ABI from '../config/abi/erc20.json';
 
 const logger = getLogger('Erc20Gateway');
+const EthereumTx = ethereumjs.Transaction;
 
 CurrencyRegistry.onERC20TokenRegistered((token: IErc20Token) => {
   logger.info(`Register Erc20Gateway to the registry: ${token.symbol}`);
@@ -109,7 +110,6 @@ export class Erc20Gateway extends AccountBasedGateway {
     }
 
     const tx = new EthereumTx({
-      chainId: this._ethGateway.getChainId(),
       data: this._contract.methods.transfer(toAddress, amount.toString()).encodeABI(),
       gasLimit: web3.utils.toHex(gasLimit),
       gasPrice: web3.utils.toHex(gasPrice),
