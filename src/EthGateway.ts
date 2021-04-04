@@ -69,6 +69,10 @@ export class EthGateway extends AccountBasedGateway {
   public async getGasPrice(useLowerNetworkFee?: boolean): Promise<BigNumber> {
     const baseGasPrice = new BigNumber(await web3.eth.getGasPrice());
     let finalGasPrice: BigNumber = new BigNumber(maxGasPrice);
+    const configMaxGasPrice = parseInt(EnvConfigRegistry.getCustomEnvConfig('ETH_MAX_GAS_PRICE'), 10);
+    if (!isNaN(configMaxGasPrice)) {
+      finalGasPrice = new BigNumber(configMaxGasPrice);
+    }
 
     let mulNumber = 5;
     if (!!useLowerNetworkFee) {
