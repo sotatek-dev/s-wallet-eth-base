@@ -74,7 +74,8 @@ var EthTransaction_1 = require("./EthTransaction");
 var EthTypeConverter = __importStar(require("./EthTypeConverter"));
 var web3_1 = require("./web3");
 var erc20_json_1 = __importDefault(require("../config/abi/erc20.json"));
-var ethereumjs_tx_1 = __importDefault(require("ethereumjs-tx"));
+var ethereumjs = __importStar(require("ethereumjs-tx"));
+var EthereumTx = ethereumjs.Transaction;
 var logger = sota_common_1.getLogger('EthGateway');
 var plusNumber = 20000000000;
 var maxGasPrice = 120000000000;
@@ -265,14 +266,13 @@ var EthGateway = (function (_super) {
                         if (balance.lt(amount.add(fee))) {
                             throw new Error("EthGateway::constructRawTransaction could not construct tx because of insufficient balance:          address=" + fromAddress + ", balance=" + balance + ", amount=" + amount + ", fee=" + fee);
                         }
-                        tx = new ethereumjs_tx_1.default({
-                            chainId: this.getChainId(),
-                            data: '',
+                        tx = new EthereumTx({
                             gasLimit: web3_1.web3.utils.toHex(options.isConsolidate ? 21000 : 150000),
                             gasPrice: web3_1.web3.utils.toHex(gasPrice),
                             nonce: web3_1.web3.utils.toHex(nonce),
                             to: toAddress,
                             value: web3_1.web3.utils.toHex(amount),
+                            data: '0x',
                         });
                         return [2, {
                                 txid: "0x" + tx.hash().toString('hex'),
@@ -283,7 +283,7 @@ var EthGateway = (function (_super) {
         });
     };
     EthGateway.prototype.reconstructRawTx = function (rawTx) {
-        var tx = new ethereumjs_tx_1.default(rawTx);
+        var tx = new EthereumTx(rawTx);
         return {
             txid: "0x" + tx.hash().toString('hex'),
             unsignedRaw: tx.serialize().toString('hex'),
@@ -296,7 +296,7 @@ var EthGateway = (function (_super) {
                 if (secret.startsWith('0x')) {
                     secret = secret.substr(2);
                 }
-                ethTx = new ethereumjs_tx_1.default(unsignedRaw);
+                ethTx = new EthereumTx(unsignedRaw, { chain: this.getChainName() });
                 privateKey = Buffer.from(secret, 'hex');
                 ethTx.sign(privateKey);
                 return [2, {
@@ -316,7 +316,7 @@ var EthGateway = (function (_super) {
                         if (!rawTx.startsWith('0x')) {
                             rawTx = '0x' + rawTx;
                         }
-                        ethTx = new ethereumjs_tx_1.default(rawTx);
+                        ethTx = new EthereumTx(rawTx, { chain: this.getChainName() });
                         txid = ethTx.hash().toString('hex');
                         if (!txid.startsWith('0x')) {
                             txid = '0x' + txid;
@@ -539,6 +539,10 @@ var EthGateway = (function (_super) {
     EthGateway.prototype.getChainId = function () {
         var config = sota_common_1.CurrencyRegistry.getCurrencyConfig(this._currency);
         return Number(config.chainId);
+    };
+    EthGateway.prototype.getChainName = function () {
+        var config = sota_common_1.CurrencyRegistry.getCurrencyConfig(this._currency);
+        return config.chainName;
     };
     EthGateway.prototype.estimateFee = function (options) {
         return __awaiter(this, void 0, void 0, function () {

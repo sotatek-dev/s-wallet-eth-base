@@ -60,14 +60,22 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 var web3_1 = require("./web3");
 var lodash_1 = __importDefault(require("lodash"));
-var ethereumjs_tx_1 = __importDefault(require("ethereumjs-tx"));
+var ethereumjs = __importStar(require("ethereumjs-tx"));
 var sota_common_1 = require("sota-common");
 var Erc20Transaction_1 = __importDefault(require("./Erc20Transaction"));
 var erc20_json_1 = __importDefault(require("../config/abi/erc20.json"));
 var logger = sota_common_1.getLogger('Erc20Gateway');
+var EthereumTx = ethereumjs.Transaction;
 sota_common_1.CurrencyRegistry.onERC20TokenRegistered(function (token) {
     logger.info("Register Erc20Gateway to the registry: " + token.symbol);
     sota_common_1.GatewayRegistry.registerLazyCreateMethod(token, function () { return new Erc20Gateway(token); });
@@ -151,8 +159,7 @@ var Erc20Gateway = (function (_super) {
                         if (ethBalance.lt(fee)) {
                             throw new Error("Could not construct tx because of lacking fee: address=" + fromAddress + ", fee=" + fee + ", ethBalance=" + ethBalance);
                         }
-                        tx = new ethereumjs_tx_1.default({
-                            chainId: this._ethGateway.getChainId(),
+                        tx = new EthereumTx({
                             data: this._contract.methods.transfer(toAddress, amount.toString()).encodeABI(),
                             gasLimit: web3_1.web3.utils.toHex(gasLimit),
                             gasPrice: web3_1.web3.utils.toHex(gasPrice),

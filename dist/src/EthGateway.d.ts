@@ -29,6 +29,7 @@ export declare class EthGateway extends AccountBasedGateway {
     getRawTransactionReceipt(txid: string): Promise<web3_types2.TransactionReceipt>;
     getErc20TokenInfo(contractAddress: string): Promise<IErc20Token>;
     getChainId(): number;
+    getChainName(): string;
     estimateFee(options: {
         isConsolidate: boolean;
         useLowerNetworkFee?: boolean;
