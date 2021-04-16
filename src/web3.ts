@@ -8,6 +8,15 @@ const infuraWeb3 = new Web3();
 
 EnvConfigRegistry.onNetworkChanged(network => {
   logger.info(`web3::onNetworkChanged network=${network}`);
+  const infuraEnpoint = process.env.INFURA_ENDPOINT
+  if (infuraEnpoint) {
+    const provider = new Web3.providers.HttpProvider(infuraEnpoint);
+    web3.setProvider(provider);
+    infuraWeb3.setProvider(provider);
+    return;
+  }
+
+  // This implement is for backward compability
   const infuraProjectId = process.env.INFURA_PROJECT_ID;
   if (network === NetworkType.MainNet) {
     const provider = new Web3.providers.HttpProvider(`https://mainnet.infura.io/v3/${infuraProjectId}`);
@@ -17,7 +26,7 @@ EnvConfigRegistry.onNetworkChanged(network => {
   }
 
   if (network === NetworkType.TestNet) {
-    const provider = new Web3.providers.HttpProvider(`https://mainnet.infura.io/v3/${infuraProjectId}`);
+    const provider = new Web3.providers.HttpProvider(`https://rinkeby.infura.io/v3/${infuraProjectId}`);
     web3.setProvider(provider);
     infuraWeb3.setProvider(provider);
     return;
