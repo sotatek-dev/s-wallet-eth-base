@@ -71,6 +71,20 @@ export class Erc20Gateway extends AccountBasedGateway {
     } else {
       _gasPrice = await this._ethGateway.getGasPrice(options.useLowerNetworkFee);
     }
+
+    /**
+     * Workaround for the issue in 2021-06
+     * Something went wrong when getting gas price
+     * We'll throw error if gas price is not set or zero
+     */
+     if (!_gasPrice || !_gasPrice.gt(new BigNumber(0))) {
+      throw new Error(
+        `Erc20Gateway::constructRawTransaction could not construct tx, invalid gas price: ${_gasPrice || _gasPrice.toString()}`
+      );
+    } else {
+      logger.debug(`Erc20Gateway::constructRawTransaction gasPrice=${_gasPrice.toString()}`);
+    }
+
     const gasPrice = web3.utils.toBN(_gasPrice);
 
     let _gasLimit: number;
@@ -99,24 +113,27 @@ export class Erc20Gateway extends AccountBasedGateway {
     const balance = web3.utils.toBN(await this.getAddressBalance(fromAddress));
     if (balance.lt(amount)) {
       throw new Error(
-        `Could not construct tx because of insufficient balance: address=${fromAddress}, amount=${amount}, fee=${fee}`
+        `Erc20Gateway::constructRawTransaction Could not construct tx because of insufficient balance: address=${fromAddress}, amount=${amount}, fee=${fee}`
       );
     }
 
     if (ethBalance.lt(fee)) {
       throw new Error(
-        `Could not construct tx because of lacking fee: address=${fromAddress}, fee=${fee}, ethBalance=${ethBalance}`
+        `Erc20Gateway::constructRawTransaction Could not construct tx because of lacking fee: address=${fromAddress}, fee=${fee}, ethBalance=${ethBalance}`
       );
     }
 
-    const tx = new EthereumTx({
+    const txParams = {
       data: this._contract.methods.transfer(toAddress, amount.toString()).encodeABI(),
       gasLimit: web3.utils.toHex(gasLimit),
       gasPrice: web3.utils.toHex(gasPrice),
       nonce: web3.utils.toHex(nonce),
       to: this._currency.contractAddress,
       value: web3.utils.toHex(0),
-    });
+    };
+    logger.info(`Erc20Gateway::constructRawTransaction txParams=${JSON.stringify(txParams)}`);
+
+    const tx = new EthereumTx(txParams);
 
     return {
       txid: `0x${tx.hash().toString('hex')}`,

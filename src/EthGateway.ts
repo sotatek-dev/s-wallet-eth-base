@@ -213,6 +213,20 @@ export class EthGateway extends AccountBasedGateway {
     } else {
       _gasPrice = await this.getGasPrice(options.useLowerNetworkFee);
     }
+
+    /**
+     * Workaround for the issue in 2021-06
+     * Something went wrong when getting gas price
+     * We'll throw error if gas price is not set or zero
+     */
+    if (!_gasPrice || !_gasPrice.gt(new BigNumber(0))) {
+      throw new Error(
+        `EthGateway::constructRawTransaction could not construct tx, invalid gas price: ${_gasPrice || _gasPrice.toString()}`
+      );
+    } else {
+      logger.debug(`EthGateway::constructRawTransaction gasPrice=${_gasPrice.toString()}`);
+    }
+
     const gasPrice = web3.utils.toBN(_gasPrice);
 
     let gasLimit = web3.utils.toBN(options.isConsolidate ? 21000 : 150000); // Maximum gas allow for Ethereum transaction
@@ -235,14 +249,17 @@ export class EthGateway extends AccountBasedGateway {
       );
     }
 
-    const tx = new EthereumTx({
+    const txParams = {
       gasLimit: web3.utils.toHex(options.isConsolidate ? 21000 : 150000),
       gasPrice: web3.utils.toHex(gasPrice),
       nonce: web3.utils.toHex(nonce),
       to: toAddress,
       value: web3.utils.toHex(amount),
       data: '0x',
-    });
+    };
+    logger.info(`EthGateway::constructRawTransaction txParams=${JSON.stringify(txParams)}`);
+
+    const tx = new EthereumTx(txParams);
 
     return {
       txid: `0x${tx.hash().toString('hex')}`,
