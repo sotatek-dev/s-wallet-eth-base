@@ -20,6 +20,7 @@ import {
   implement,
   IMultiEntriesTxEntry,
 } from 'sota-common';
+import { inspect } from 'util';
 import Erc20Transaction from './Erc20Transaction';
 import ERC20ABI from '../config/abi/erc20.json';
 
@@ -91,9 +92,15 @@ export class Erc20Gateway extends AccountBasedGateway {
     if (options.explicitGasLimit) {
       _gasLimit = options.explicitGasLimit;
     } else {
-      _gasLimit = await this._contract.methods
-        .transfer(toAddress, amount.toString())
-        .estimateGas({ from: fromAddress });
+      // The error can be thrown while gas is being estimated
+      try {
+        _gasLimit = await this._contract.methods
+          .transfer(toAddress, amount.toString())
+          .estimateGas({ from: fromAddress });
+      } catch (e) {
+        logger.error(`Erc20Gateway::constructRawTransaction cannot estimate gas for transfer method error=${inspect(e)}`);
+        throw new Error(`Erc20Gateway::constructRawTransaction cannot estimate gas for transfer method, error=${e.toString()}`);
+      }
 
       if (_gasLimit < 150000) {
         _gasLimit = 150000;

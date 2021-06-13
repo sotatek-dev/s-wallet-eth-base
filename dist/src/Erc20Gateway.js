@@ -72,6 +72,7 @@ var web3_1 = require("./web3");
 var lodash_1 = __importDefault(require("lodash"));
 var ethereumjs = __importStar(require("ethereumjs-tx"));
 var sota_common_1 = require("sota-common");
+var util_1 = require("util");
 var Erc20Transaction_1 = __importDefault(require("./Erc20Transaction"));
 var erc20_json_1 = __importDefault(require("../config/abi/erc20.json"));
 var logger = sota_common_1.getLogger('Erc20Gateway');
@@ -110,7 +111,7 @@ var Erc20Gateway = (function (_super) {
     };
     Erc20Gateway.prototype.constructRawTransaction = function (fromAddress, toAddress, value, options) {
         return __awaiter(this, void 0, void 0, function () {
-            var amount, nonce, _gasPrice, gasPrice, _gasLimit, gasLimit, fee, ethBalance, _a, _b, balance, _c, _d, txParams, tx;
+            var amount, nonce, _gasPrice, gasPrice, _gasLimit, e_1, gasLimit, fee, ethBalance, _a, _b, balance, _c, _d, txParams, tx;
             return __generator(this, function (_e) {
                 switch (_e.label) {
                     case 0:
@@ -135,29 +136,37 @@ var Erc20Gateway = (function (_super) {
                         gasPrice = web3_1.web3.utils.toBN(_gasPrice);
                         if (!options.explicitGasLimit) return [3, 5];
                         _gasLimit = options.explicitGasLimit;
-                        return [3, 7];
-                    case 5: return [4, this._contract.methods
-                            .transfer(toAddress, amount.toString())
-                            .estimateGas({ from: fromAddress })];
+                        return [3, 9];
+                    case 5:
+                        _e.trys.push([5, 7, , 8]);
+                        return [4, this._contract.methods
+                                .transfer(toAddress, amount.toString())
+                                .estimateGas({ from: fromAddress })];
                     case 6:
                         _gasLimit = _e.sent();
+                        return [3, 8];
+                    case 7:
+                        e_1 = _e.sent();
+                        logger.error("Erc20Gateway::constructRawTransaction cannot estimate gas for transfer method error=" + util_1.inspect(e_1));
+                        throw new Error("Erc20Gateway::constructRawTransaction cannot estimate gas for transfer method, error=" + e_1.toString());
+                    case 8:
                         if (_gasLimit < 150000) {
                             _gasLimit = 150000;
                         }
                         if (_gasLimit > 300000) {
                             _gasLimit = 300000;
                         }
-                        _e.label = 7;
-                    case 7:
+                        _e.label = 9;
+                    case 9:
                         gasLimit = web3_1.web3.utils.toBN(_gasLimit);
                         fee = gasLimit.mul(gasPrice);
                         _b = (_a = web3_1.web3.utils).toBN;
                         return [4, web3_1.web3.eth.getBalance(fromAddress)];
-                    case 8:
+                    case 10:
                         ethBalance = _b.apply(_a, [(_e.sent()).toString()]);
                         _d = (_c = web3_1.web3.utils).toBN;
                         return [4, this.getAddressBalance(fromAddress)];
-                    case 9:
+                    case 11:
                         balance = _d.apply(_c, [_e.sent()]);
                         if (balance.lt(amount)) {
                             throw new Error("Erc20Gateway::constructRawTransaction Could not construct tx because of insufficient balance: address=" + fromAddress + ", amount=" + amount + ", fee=" + fee);
