@@ -32,8 +32,6 @@ import * as ethereumjs from 'ethereumjs-tx';
 
 const EthereumTx = ethereumjs.Transaction;
 const logger = getLogger('EthGateway');
-const plusNumber = 20000000000; // 20 gwei
-const maxGasPrice = 120000000000; // 120 gwei
 const _cacheBlockNumber = {
   value: 0,
   updatedAt: 0,
@@ -68,23 +66,42 @@ export class EthGateway extends AccountBasedGateway {
    */
   public async getGasPrice(useLowerNetworkFee?: boolean): Promise<BigNumber> {
     const baseGasPrice = new BigNumber(await web3.eth.getGasPrice());
-    let finalGasPrice: BigNumber = new BigNumber(maxGasPrice);
+    // To prevent drain attack, set max gas price as 120 gwei
+    // This value can be override via the config ETH_MAX_GAS_PRICE
+    let finalGasPrice: BigNumber = new BigNumber(120000000000);
     const configMaxGasPrice = parseInt(EnvConfigRegistry.getCustomEnvConfig('ETH_MAX_GAS_PRICE'), 10);
     if (!isNaN(configMaxGasPrice)) {
       finalGasPrice = new BigNumber(configMaxGasPrice);
     }
 
-    let mulNumber = 5;
+    let multipler = 5;
     if (!!useLowerNetworkFee) {
-      mulNumber = 2;
+      multipler = 2;
+      const configMultiplerLow = parseInt(EnvConfigRegistry.getCustomEnvConfig('ETH_MAX_GAS_MULTIPLER_LOW'), 10);
+      if (!isNaN(configMultiplerLow)) {
+        multipler = configMultiplerLow;
+      }
+    } else {
+      const configMultiplerHigh = parseInt(EnvConfigRegistry.getCustomEnvConfig('ETH_MAX_GAS_MULTIPLER_HIGH'), 10);
+      if (!isNaN(configMultiplerHigh)) {
+        multipler = configMultiplerHigh;
+      }
     }
 
-    const multiplyGasPrice = baseGasPrice.multipliedBy(mulNumber);
+    const multiplyGasPrice = baseGasPrice.multipliedBy(multipler);
     if (finalGasPrice.gt(multiplyGasPrice)) {
       finalGasPrice = multiplyGasPrice;
     }
 
-    const plusGasPrice = baseGasPrice.plus(plusNumber);
+    // Buffer some gas to make sure transaction can be confirmed faster
+    // The default value is 20gwei, and can be overrided via config ETH_MAX_GAS_PLUS
+    let plusGas = 20000000000; // 20 gwei
+    const configPlusGas = parseInt(EnvConfigRegistry.getCustomEnvConfig('ETH_MAX_GAS_PLUS'), 10);
+    if (!isNaN(configPlusGas)) {
+      plusGas = configPlusGas;
+    }
+
+    const plusGasPrice = baseGasPrice.plus(plusGas);
     if (finalGasPrice.gt(plusGasPrice)) {
       finalGasPrice = plusGasPrice;
     }
