@@ -32,7 +32,6 @@ import * as ethereumjs from 'ethereumjs-tx';
 
 const EthereumTx = ethereumjs.Transaction;
 const logger = getLogger('EthGateway');
-const plusNumber = 20000000000; // 20 gwei
 const maxGasPrice = 120000000000; // 120 gwei
 const _cacheBlockNumber = {
   value: 0,
@@ -84,7 +83,14 @@ export class EthGateway extends AccountBasedGateway {
       finalGasPrice = multiplyGasPrice;
     }
 
-    const plusGasPrice = baseGasPrice.plus(plusNumber);
+    // Buffer some gas to make sure transaction can be confirmed faster
+    let plusGas = 20000000000; // 20 gwei
+    const configPlusGas = parseInt(EnvConfigRegistry.getCustomEnvConfig('ETH_PLUS_GAS'), 10);
+    if (!isNaN(configPlusGas)) {
+      plusGas = configPlusGas;
+    }
+
+    const plusGasPrice = baseGasPrice.plus(plusGas);
     if (finalGasPrice.gt(plusGasPrice)) {
       finalGasPrice = plusGasPrice;
     }

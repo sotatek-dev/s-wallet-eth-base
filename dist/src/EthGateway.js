@@ -77,7 +77,6 @@ var erc20_json_1 = __importDefault(require("../config/abi/erc20.json"));
 var ethereumjs = __importStar(require("ethereumjs-tx"));
 var EthereumTx = ethereumjs.Transaction;
 var logger = sota_common_1.getLogger('EthGateway');
-var plusNumber = 20000000000;
 var maxGasPrice = 120000000000;
 var _cacheBlockNumber = {
     value: 0,
@@ -102,7 +101,7 @@ var EthGateway = (function (_super) {
     }
     EthGateway.prototype.getGasPrice = function (useLowerNetworkFee) {
         return __awaiter(this, void 0, void 0, function () {
-            var baseGasPrice, _a, finalGasPrice, configMaxGasPrice, mulNumber, multiplyGasPrice, plusGasPrice;
+            var baseGasPrice, _a, finalGasPrice, configMaxGasPrice, mulNumber, multiplyGasPrice, plusGas, configPlusGas, plusGasPrice;
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
@@ -123,7 +122,12 @@ var EthGateway = (function (_super) {
                         if (finalGasPrice.gt(multiplyGasPrice)) {
                             finalGasPrice = multiplyGasPrice;
                         }
-                        plusGasPrice = baseGasPrice.plus(plusNumber);
+                        plusGas = 20000000000;
+                        configPlusGas = parseInt(sota_common_1.EnvConfigRegistry.getCustomEnvConfig('ETH_PLUS_GAS'), 10);
+                        if (!isNaN(configPlusGas)) {
+                            plusGas = configPlusGas;
+                        }
+                        plusGasPrice = baseGasPrice.plus(plusGas);
                         if (finalGasPrice.gt(plusGasPrice)) {
                             finalGasPrice = plusGasPrice;
                         }
