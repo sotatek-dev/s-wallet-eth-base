@@ -77,7 +77,6 @@ var erc20_json_1 = __importDefault(require("../config/abi/erc20.json"));
 var ethereumjs = __importStar(require("ethereumjs-tx"));
 var EthereumTx = ethereumjs.Transaction;
 var logger = sota_common_1.getLogger('EthGateway');
-var maxGasPrice = 120000000000;
 var _cacheBlockNumber = {
     value: 0,
     updatedAt: 0,
@@ -101,7 +100,7 @@ var EthGateway = (function (_super) {
     }
     EthGateway.prototype.getGasPrice = function (useLowerNetworkFee) {
         return __awaiter(this, void 0, void 0, function () {
-            var baseGasPrice, _a, finalGasPrice, configMaxGasPrice, mulNumber, multiplyGasPrice, plusGas, configPlusGas, plusGasPrice;
+            var baseGasPrice, _a, finalGasPrice, configMaxGasPrice, multipler, configMultiplerLow, configMultiplerHigh, multiplyGasPrice, plusGas, configPlusGas, plusGasPrice;
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
@@ -109,21 +108,31 @@ var EthGateway = (function (_super) {
                         return [4, web3_1.web3.eth.getGasPrice()];
                     case 1:
                         baseGasPrice = new (_a.apply(sota_common_1.BigNumber, [void 0, _b.sent()]))();
-                        finalGasPrice = new sota_common_1.BigNumber(maxGasPrice);
+                        finalGasPrice = new sota_common_1.BigNumber(120000000000);
                         configMaxGasPrice = parseInt(sota_common_1.EnvConfigRegistry.getCustomEnvConfig('ETH_MAX_GAS_PRICE'), 10);
                         if (!isNaN(configMaxGasPrice)) {
                             finalGasPrice = new sota_common_1.BigNumber(configMaxGasPrice);
                         }
-                        mulNumber = 5;
+                        multipler = 5;
                         if (!!useLowerNetworkFee) {
-                            mulNumber = 2;
+                            multipler = 2;
+                            configMultiplerLow = parseInt(sota_common_1.EnvConfigRegistry.getCustomEnvConfig('ETH_MAX_GAS_MULTIPLER_LOW'), 10);
+                            if (!isNaN(configMultiplerLow)) {
+                                multipler = configMultiplerLow;
+                            }
                         }
-                        multiplyGasPrice = baseGasPrice.multipliedBy(mulNumber);
+                        else {
+                            configMultiplerHigh = parseInt(sota_common_1.EnvConfigRegistry.getCustomEnvConfig('ETH_MAX_GAS_MULTIPLER_HIGH'), 10);
+                            if (!isNaN(configMultiplerHigh)) {
+                                multipler = configMultiplerHigh;
+                            }
+                        }
+                        multiplyGasPrice = baseGasPrice.multipliedBy(multipler);
                         if (finalGasPrice.gt(multiplyGasPrice)) {
                             finalGasPrice = multiplyGasPrice;
                         }
                         plusGas = 20000000000;
-                        configPlusGas = parseInt(sota_common_1.EnvConfigRegistry.getCustomEnvConfig('ETH_PLUS_GAS'), 10);
+                        configPlusGas = parseInt(sota_common_1.EnvConfigRegistry.getCustomEnvConfig('ETH_MAX_GAS_PLUS'), 10);
                         if (!isNaN(configPlusGas)) {
                             plusGas = configPlusGas;
                         }
