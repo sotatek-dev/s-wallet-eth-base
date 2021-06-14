@@ -111,7 +111,7 @@ var Erc20Gateway = (function (_super) {
     };
     Erc20Gateway.prototype.constructRawTransaction = function (fromAddress, toAddress, value, options) {
         return __awaiter(this, void 0, void 0, function () {
-            var amount, nonce, _gasPrice, gasPrice, _gasLimit, e_1, gasLimit, fee, ethBalance, _a, _b, balance, _c, _d, txParams, tx;
+            var amount, nonce, _gasPrice, minGasPrice, configMinGasPrice, gasPrice, _gasLimit, e_1, gasLimit, fee, ethBalance, _a, _b, balance, _c, _d, txParams, tx;
             return __generator(this, function (_e) {
                 switch (_e.label) {
                     case 0:
@@ -127,7 +127,12 @@ var Erc20Gateway = (function (_super) {
                         _gasPrice = _e.sent();
                         _e.label = 4;
                     case 4:
-                        if (!_gasPrice || !_gasPrice.gt(new sota_common_1.BigNumber(0))) {
+                        minGasPrice = new sota_common_1.BigNumber(1000000000);
+                        configMinGasPrice = parseInt(sota_common_1.EnvConfigRegistry.getCustomEnvConfig('ETH_MIN_GAS_PRICE'), 10);
+                        if (!isNaN(configMinGasPrice)) {
+                            minGasPrice = new sota_common_1.BigNumber(configMinGasPrice);
+                        }
+                        if (!_gasPrice || !_gasPrice.gt(minGasPrice)) {
                             throw new Error("Erc20Gateway::constructRawTransaction could not construct tx, invalid gas price: " + (_gasPrice || _gasPrice.toString()));
                         }
                         else {

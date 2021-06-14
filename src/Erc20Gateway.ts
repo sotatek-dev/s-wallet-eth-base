@@ -19,6 +19,7 @@ import {
   getLogger,
   implement,
   IMultiEntriesTxEntry,
+  EnvConfigRegistry,
 } from 'sota-common';
 import { inspect } from 'util';
 import Erc20Transaction from './Erc20Transaction';
@@ -78,7 +79,13 @@ export class Erc20Gateway extends AccountBasedGateway {
      * Something went wrong when getting gas price
      * We'll throw error if gas price is not set or zero
      */
-     if (!_gasPrice || !_gasPrice.gt(new BigNumber(0))) {
+    let minGasPrice = new BigNumber(1000000000); // Sometimes gas price is 5wei which is very weird. This set default min gas price is 1 gwei
+    const configMinGasPrice = parseInt(EnvConfigRegistry.getCustomEnvConfig('ETH_MIN_GAS_PRICE'), 10);
+    if (!isNaN(configMinGasPrice)) {
+      minGasPrice = new BigNumber(configMinGasPrice);
+    }
+
+    if (!_gasPrice || !_gasPrice.gt(minGasPrice)) {
       throw new Error(
         `Erc20Gateway::constructRawTransaction could not construct tx, invalid gas price: ${_gasPrice || _gasPrice.toString()}`
       );
