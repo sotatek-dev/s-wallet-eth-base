@@ -3,20 +3,41 @@ var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
         extendStatics = Object.setPrototypeOf ||
             ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
         return extendStatics(d, b);
     };
     return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
         extendStatics(d, b);
         function __() { this.constructor = d; }
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
 };
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
@@ -60,14 +81,9 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.EthGateway = void 0;
+var lodash_1 = __importDefault(require("lodash"));
 var sota_common_1 = require("sota-common");
 var lru_cache_1 = __importDefault(require("lru-cache"));
 var EthTransaction_1 = require("./EthTransaction");
@@ -160,7 +176,7 @@ var EthGateway = (function (_super) {
                         _b = (_a = web3_1.web3.utils).toBN;
                         return [4, this.getGasPrice()];
                     case 1:
-                        gasPrice = _b.apply(_a, [_c.sent()]);
+                        gasPrice = _b.apply(_a, [(_c.sent()).toString()]);
                         gasLimit = web3_1.web3.utils.toBN(150000);
                         result = gasPrice.mul(gasLimit);
                         return [2, new sota_common_1.BigNumber(result.toString())];
@@ -251,7 +267,7 @@ var EthGateway = (function (_super) {
             return __generator(this, function (_c) {
                 switch (_c.label) {
                     case 0:
-                        amount = web3_1.web3.utils.toBN(value);
+                        amount = web3_1.web3.utils.toBN(value.toString());
                         return [4, web3_1.web3.eth.getTransactionCount(fromAddress)];
                     case 1:
                         nonce = _c.sent();
@@ -269,7 +285,7 @@ var EthGateway = (function (_super) {
                         else {
                             logger.debug("EthGateway::constructRawTransaction gasPrice=" + _gasPrice.toString());
                         }
-                        gasPrice = web3_1.web3.utils.toBN(_gasPrice);
+                        gasPrice = web3_1.web3.utils.toBN(_gasPrice.toString());
                         gasLimit = web3_1.web3.utils.toBN(options.isConsolidate ? 21000 : 150000);
                         if (options.explicitGasLimit) {
                             gasLimit = web3_1.web3.utils.toBN(options.explicitGasLimit);
@@ -574,7 +590,7 @@ var EthGateway = (function (_super) {
                         _b = (_a = web3_1.web3.utils).toBN;
                         return [4, this.getGasPrice(options.useLowerNetworkFee)];
                     case 1:
-                        gasPrice = _b.apply(_a, [_c.sent()]);
+                        gasPrice = _b.apply(_a, [(_c.sent()).toString()]);
                         gasLimit = web3_1.web3.utils.toBN(options.isConsolidate ? 21000 : 150000);
                         fee = gasLimit.mul(gasPrice);
                         return [2, new sota_common_1.BigNumber(fee.toString())];
@@ -587,14 +603,18 @@ var EthGateway = (function (_super) {
             var block, txids;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4, web3_1.web3.eth.getBlock(EthTypeConverter.toBlockType(blockNumber))];
+                    case 0: return [4, web3_1.web3.eth.getBlock(EthTypeConverter.toBlockType(blockNumber), true)];
                     case 1:
                         block = _a.sent();
                         if (!block) {
                             return [2, null];
                         }
                         txids = block.transactions.map(function (tx) { return (tx.hash ? tx.hash : tx.toString()); });
-                        return [2, new sota_common_1.Block(Object.assign({}, block), txids)];
+                        return [2, new sota_common_1.Block({
+                                hash: block.hash,
+                                number: block.number,
+                                timestamp: lodash_1.default.toNumber(block.timestamp),
+                            }, txids)];
                 }
             });
         });

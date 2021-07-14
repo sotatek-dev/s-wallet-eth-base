@@ -1,5 +1,5 @@
 import { IErc20Token, BigNumber, MultiEntriesTransaction, IMultiEntriesTxProps } from 'sota-common';
-import * as web3_types from 'web3/types';
+import * as web3_types from 'web3-core/types';
 import * as eth_types from 'web3/eth/types';
 import { web3 } from './web3';
 

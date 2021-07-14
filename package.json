@@ -18,7 +18,7 @@
     "lru-cache": "5.1.1",
     "p-limit": "2.2.0",
     "sota-common": "npm:@sotatek/crypto-currency-common@^0.*",
-    "web3": "1.0.0-beta.37"
+    "web3": "1.4.0"
   },
   "peerDependencies": {
     "sota-common": "npm:@sotatek/crypto-currency-common@^0.*"

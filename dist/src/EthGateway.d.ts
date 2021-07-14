@@ -1,6 +1,5 @@
-import * as web3_accounts from 'web3/eth/accounts';
-import * as web3_types from 'web3/eth/types';
-import * as web3_types2 from 'web3/types';
+import * as web3_types from 'web3-eth/types';
+import * as web3_types2 from 'web3-core/types';
 import { Block, AccountBasedGateway, IRawTransaction, ISignedRawTransaction, ISubmittedTransaction, TransactionStatus, Address, BigNumber, IErc20Token } from 'sota-common';
 import { EthTransaction } from './EthTransaction';
 export declare class EthGateway extends AccountBasedGateway {
@@ -9,13 +8,13 @@ export declare class EthGateway extends AccountBasedGateway {
     getParallelNetworkRequestLimit(): number;
     getAverageSeedingFee(): Promise<BigNumber>;
     normalizeAddress(address: string): string;
-    createAccountAsync(): Promise<web3_accounts.Account>;
-    getAccountFromPrivateKey(privateKey: string): Promise<web3_accounts.Account>;
+    createAccountAsync(): Promise<web3_types2.Account>;
+    getAccountFromPrivateKey(privateKey: string): Promise<web3_types2.Account>;
     isValidAddressAsync(address: string): Promise<boolean>;
     getAddressBalance(address: string): Promise<BigNumber>;
     getBlockCount(): Promise<number>;
     constructRawTransaction(fromAddress: Address, toAddress: Address, value: BigNumber, options: {
-        isConsolidate: false;
+        isConsolidate: boolean;
         destinationTag?: string;
         useLowerNetworkFee?: boolean;
         explicitGasPrice?: number;

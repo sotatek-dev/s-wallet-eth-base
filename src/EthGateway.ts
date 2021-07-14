@@ -1,7 +1,7 @@
 import _ from 'lodash';
-import * as web3_accounts from 'web3/eth/accounts';
-import * as web3_types from 'web3/eth/types';
-import * as web3_types2 from 'web3/types';
+import * as web3_types from 'web3-eth/types';
+import * as web3_types2 from 'web3-core/types';
+import { AbiItem } from 'web3-utils';
 import {
   Block,
   AccountBasedGateway,
@@ -118,7 +118,7 @@ export class EthGateway extends AccountBasedGateway {
   }
 
   public async getAverageSeedingFee(): Promise<BigNumber> {
-    const gasPrice = web3.utils.toBN(await this.getGasPrice());
+    const gasPrice = web3.utils.toBN((await this.getGasPrice()).toString());
     const gasLimit = web3.utils.toBN(150000); // For ETH transaction 21000 gas is fixed
     const result = gasPrice.mul(gasLimit);
     return new BigNumber(result.toString());
@@ -142,11 +142,11 @@ export class EthGateway extends AccountBasedGateway {
    *
    * @returns {IAccount} the account object
    */
-  public async createAccountAsync(): Promise<web3_accounts.Account> {
+  public async createAccountAsync(): Promise<web3_types2.Account> {
     return web3.eth.accounts.create();
   }
 
-  public async getAccountFromPrivateKey(privateKey: string): Promise<web3_accounts.Account> {
+  public async getAccountFromPrivateKey(privateKey: string): Promise<web3_types2.Account> {
     if (privateKey.indexOf('0x') < 0) {
       privateKey = '0x' + privateKey;
     }
@@ -215,14 +215,14 @@ export class EthGateway extends AccountBasedGateway {
     toAddress: Address,
     value: BigNumber,
     options: {
-      isConsolidate: false;
+      isConsolidate: boolean;
       destinationTag?: string;
       useLowerNetworkFee?: boolean;
       explicitGasPrice?: number,
       explicitGasLimit?: number,
     }
   ): Promise<IRawTransaction> {
-    let amount = web3.utils.toBN(value);
+    let amount = web3.utils.toBN(value.toString());
     const nonce = await web3.eth.getTransactionCount(fromAddress);
     let _gasPrice: BigNumber;
     if (options.explicitGasPrice) {
@@ -244,7 +244,7 @@ export class EthGateway extends AccountBasedGateway {
       logger.debug(`EthGateway::constructRawTransaction gasPrice=${_gasPrice.toString()}`);
     }
 
-    const gasPrice = web3.utils.toBN(_gasPrice);
+    const gasPrice = web3.utils.toBN(_gasPrice.toString());
 
     let gasLimit = web3.utils.toBN(options.isConsolidate ? 21000 : 150000); // Maximum gas allow for Ethereum transaction
     if (options.explicitGasLimit) {
@@ -496,7 +496,7 @@ export class EthGateway extends AccountBasedGateway {
   public async getErc20TokenInfo(contractAddress: string): Promise<IErc20Token> {
     contractAddress = this.normalizeAddress(contractAddress);
     try {
-      const contract = new web3.eth.Contract(ERC20ABI, contractAddress);
+      const contract = new web3.eth.Contract(ERC20ABI as AbiItem[], contractAddress);
       const [networkSymbol, name, decimals] = await Promise.all([
         contract.methods.symbol().call(),
         contract.methods.name().call(),
@@ -537,7 +537,7 @@ export class EthGateway extends AccountBasedGateway {
   }
 
   public async estimateFee(options: { isConsolidate: boolean; useLowerNetworkFee?: boolean }): Promise<BigNumber> {
-    const gasPrice = web3.utils.toBN(await this.getGasPrice(options.useLowerNetworkFee));
+    const gasPrice = web3.utils.toBN((await this.getGasPrice(options.useLowerNetworkFee)).toString());
     const gasLimit = web3.utils.toBN(options.isConsolidate ? 21000 : 150000); // Maximum gas allow for Ethereum transaction
     const fee = gasLimit.mul(gasPrice);
     return new BigNumber(fee.toString());
@@ -550,13 +550,17 @@ export class EthGateway extends AccountBasedGateway {
    * @returns {Block} block: the block detail
    */
   protected async _getOneBlock(blockNumber: string | number): Promise<Block> {
-    const block = await web3.eth.getBlock(EthTypeConverter.toBlockType(blockNumber));
+    const block = await web3.eth.getBlock(EthTypeConverter.toBlockType(blockNumber), true);
     if (!block) {
       return null;
     }
 
     const txids = block.transactions.map(tx => (tx.hash ? tx.hash : tx.toString()));
-    return new Block(Object.assign({}, block), txids);
+    return new Block({
+      hash: block.hash,
+      number: block.number,
+      timestamp: _.toNumber(block.timestamp),
+    }, txids);
   }
 
   /**

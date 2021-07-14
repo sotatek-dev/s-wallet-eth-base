@@ -1,6 +1,6 @@
 import { BlockHeader, BigNumber, AccountBasedTransaction } from 'sota-common';
-import * as web3_types from 'web3/types';
-import * as eth_types from 'web3/eth/types';
+import * as web3_types from 'web3-core/types';
+import * as eth_types from 'web3-eth/types';
 export declare class EthTransaction extends AccountBasedTransaction {
     readonly receiptStatus: boolean;
     readonly block: BlockHeader;

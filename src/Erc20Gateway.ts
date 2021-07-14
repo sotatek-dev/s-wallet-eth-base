@@ -1,5 +1,6 @@
 import EthGateway from './EthGateway';
-import Contract from 'web3/eth/contract';
+import { Contract } from 'web3-eth-contract';
+import { AbiItem } from 'web3-utils';
 import { web3 } from './web3';
 import _ from 'lodash';
 import * as ethereumjs from 'ethereumjs-tx';
@@ -39,7 +40,7 @@ export class Erc20Gateway extends AccountBasedGateway {
 
   public constructor(currency: IErc20Token) {
     super(currency);
-    this._contract = new web3.eth.Contract(ERC20ABI, currency.contractAddress);
+    this._contract = new web3.eth.Contract(ERC20ABI as AbiItem[], currency.contractAddress);
     this._ethGateway = GatewayRegistry.getGatewayInstance(CurrencyRegistry.Ethereum) as EthGateway;
   }
 
@@ -64,7 +65,7 @@ export class Erc20Gateway extends AccountBasedGateway {
       explicitGasLimit?: number;
     }
   ): Promise<IRawTransaction> {
-    const amount = web3.utils.toBN(value);
+    const amount = web3.utils.toBN(value.toString());
     const nonce = await web3.eth.getTransactionCount(fromAddress);
     let _gasPrice: BigNumber;
     if (options.explicitGasPrice) {
@@ -86,7 +87,7 @@ export class Erc20Gateway extends AccountBasedGateway {
       logger.debug(`Erc20Gateway::constructRawTransaction gasPrice=${_gasPrice.toString()}`);
     }
 
-    const gasPrice = web3.utils.toBN(_gasPrice);
+    const gasPrice = web3.utils.toBN(_gasPrice.toString());
 
     let _gasLimit: number;
     if (options.explicitGasLimit) {
@@ -117,7 +118,7 @@ export class Erc20Gateway extends AccountBasedGateway {
 
     // Check whether the balance of hot wallet is enough to send
     const ethBalance = web3.utils.toBN((await web3.eth.getBalance(fromAddress)).toString());
-    const balance = web3.utils.toBN(await this.getAddressBalance(fromAddress));
+    const balance = web3.utils.toBN((await this.getAddressBalance(fromAddress)).toString());
     if (balance.lt(amount)) {
       throw new Error(
         `Erc20Gateway::constructRawTransaction Could not construct tx because of insufficient balance: address=${fromAddress}, amount=${amount}, fee=${fee}`

@@ -1,4 +1,4 @@
-import Web3 = require('web3');
+import Web3 from 'web3';
 import { EnvConfigRegistry, NetworkType, CurrencyRegistry, BlockchainPlatform, getLogger } from 'sota-common';
 
 const logger = getLogger('web3');
