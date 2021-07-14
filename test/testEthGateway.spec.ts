@@ -1,7 +1,17 @@
 import * as _ from 'lodash';
 import EthGateway from '../src/EthGateway';
 import { expect, assert } from 'chai';
-import { TransactionStatus } from 'sota-common';
+import { BigNumber, CurrencyRegistry, TransactionStatus } from 'sota-common';
+
+CurrencyRegistry.setCurrencyConfig(CurrencyRegistry.Ethereum, {
+  currency: "eth",
+  chainId: "2",
+  chainName: "ropsten",
+  network: "eth",
+  averageBlockTime: 5000,
+  requiredConfirmations: 2, 
+  restEndpoint: "https://ropsten.infura.io/v3/32d1bb3a46e54208a4dce21845901247",
+} as any )
 
 describe('EthGateway::test-create-account', () => {
   const eth = EthGateway.getInstance();
@@ -14,8 +24,8 @@ describe('EthGateway::test-create-account', () => {
 describe('EthGateway::test-get-one-transaction', () => {
   const eth = EthGateway.getInstance();
   it('Return transaction info if txid valid', async () => {
-    const tx = await eth.getOneTransaction('0x2de03b4e82e3869402677c14d497e48dc7065819c4b69ae9531bafad6f4c73ed');
-    assert.equal(tx.txid, '0x2de03b4e82e3869402677c14d497e48dc7065819c4b69ae9531bafad6f4c73ed');
+    const tx = await eth.getOneTransaction('0xc251aebdccde8d476d644d867dee5a5032482d735f4d3b738b4ca068d928e22f');
+    assert.equal(tx.txid, '0xc251aebdccde8d476d644d867dee5a5032482d735f4d3b738b4ca068d928e22f');
   });
 
   it('Return null if unknown transaction', async () => {
@@ -38,9 +48,9 @@ describe('EthGateway::test-get-transaction-by-ids', () => {
   const eth = EthGateway.getInstance();
   it('Return transaction array with txids valid', async () => {
     const txids = [
-      '0x2de03b4e82e3869402677c14d497e48dc7065819c4b69ae9531bafad6f4c73ed',
-      '0x80854cb247f13a86cbaff7ec5b35cd784c0d38556ea694c8d05bf73b94d41312',
-      '0x7a45ddb19524c709ee2593c63708ee89f42dfa416ad62ba6299dec41898b3816',
+      '0xca31029d1d22d51af3dd2d7eee407ab81e284745c3cc3ae211c9337e502d95b3',
+      '0xe9a7feb06b59b0f648f51b91469ecf5d3d5b50f8969bbc9f21e5c14150f84797',
+      '0xc251aebdccde8d476d644d867dee5a5032482d735f4d3b738b4ca068d928e22f',
     ];
     const txs = await eth.getTransactionsByIds(txids);
     assert.equal(txs.length, 3);
@@ -48,9 +58,9 @@ describe('EthGateway::test-get-transaction-by-ids', () => {
 
   it('If txids have element invalid, txs have element null', async () => {
     const txids = [
-      '0x2de03b4e82e3869402677c14d497e48dc7065819c4b69ae9531bafad6f4c73ed',
+      '0xca31029d1d22d51af3dd2d7eee407ab81e284745c3cc3ae211c9337e502d95b3',
       '0x1111111111111111111111111111111111111111111111111111111111111111',
-      '0x7a45ddb19524c709ee2593c63708ee89f42dfa416ad62ba6299dec41898b3816',
+      '0xc251aebdccde8d476d644d867dee5a5032482d735f4d3b738b4ca068d928e22f',
     ];
     const txs = await eth.getTransactionsByIds(txids);
     const filterTxs = _.compact(txs);
@@ -59,9 +69,9 @@ describe('EthGateway::test-get-transaction-by-ids', () => {
 
   it('Throw error if txids have element malformed', async () => {
     const txids = [
-      '0x2de03b4e82e3869402677c14d497e48dc7065819c4b69ae9531bafad6f4c73ed',
+      '0xd41f6e9d6ee35df9a3a4912fe4890f3f178d27be8881af3abe8ba7c86a0fdda0',
       '111111111111111111111111111111111111111111111111111111111111111111',
-      '0x7a45ddb19524c709ee2593c63708ee89f42dfa416ad62ba6299dec41898b3816',
+      '0xe9a7feb06b59b0f648f51b91469ecf5d3d5b50f8969bbc9f21e5c14150f84797',
     ];
     let error;
     try {
@@ -153,7 +163,7 @@ describe('EthGateway::test-get-multi-block-transactions', () => {
 describe('EthGateway::test-get-address-balance', () => {
   const eth = EthGateway.getInstance();
   it('Return balance of account', async () => {
-    const balance = await eth.getAddressBalance('0xe8132179d9181da72109CD65BE6ad9B4F2a99A8B');
+    const balance = await eth.getAddressBalance('0xE688592F4a97c5a36754Df54d75f91e06BefF379');
     assert.exists(balance);
   });
 
@@ -176,7 +186,7 @@ describe('EthGateway::test-get-transaction-status', () => {
   });
 
   it('Return COMPLETED if txid valid and enought confirmation', async () => {
-    const result = await eth.getTransactionStatus('0x2de03b4e82e3869402677c14d497e48dc7065819c4b69ae9531bafad6f4c73ed');
+    const result = await eth.getTransactionStatus('0xc251aebdccde8d476d644d867dee5a5032482d735f4d3b738b4ca068d928e22f');
     assert.equal(result, TransactionStatus.COMPLETED);
   });
 });
@@ -184,12 +194,10 @@ describe('EthGateway::test-get-transaction-status', () => {
 describe('EthGateway::createRawTransaction', () => {
   const gateway = EthGateway.getInstance();
   it('Create valid raw transaction', async () => {
-    const fromAddress = '0x0d496aaDD275ddc6E3dAeE4c2b632e32F7A80Bb8';
-    const vout = {
-      toAddress: '0xDD92809A181E3f51C5C57271477cBD33Cd9ac7E5',
-      amount: '10000',
-    };
-    const result = await gateway.createRawTransaction(fromAddress, [vout]);
+    const fromAddress = '0xE688592F4a97c5a36754Df54d75f91e06BefF379';
+    const toAddress = '0x22979347B41C30213f8EC9Be3D9e0252F74464cE';
+    const amount = new BigNumber(10000);
+    const result = await gateway.constructRawTransaction(fromAddress, toAddress, amount, {isConsolidate: false});
     assert.exists(result);
   });
 });
@@ -197,14 +205,12 @@ describe('EthGateway::createRawTransaction', () => {
 describe('EthGateway::test-sign-raw-tx-by-singer-private-key', () => {
   const gateway = EthGateway.getInstance();
   it('Sign transaction valid', async () => {
-    const fromAddress = '0x0d496aaDD275ddc6E3dAeE4c2b632e32F7A80Bb8';
-    const privateKey = 'B15D1288C2AD3DC725582B189E6383D088A29E7DAA9AB6E029BEF5C619AB13FC';
-    const vout = {
-      toAddress: '0xDD92809A181E3f51C5C57271477cBD33Cd9ac7E5',
-      amount: '10000',
-    };
-    const unsignedRaw = await gateway.createRawTransaction(fromAddress, [vout]);
-    const signedRaw = await gateway.signRawTxByPrivateKey(unsignedRaw.unsignedRaw, privateKey);
+    const fromAddress = '0xE688592F4a97c5a36754Df54d75f91e06BefF379';
+    const privateKey = '76e4a452fa0e139624713cf714b100fb00de93a3ef1f15f08070ebb6d4be2b93';
+    const toAddress = '0x22979347B41C30213f8EC9Be3D9e0252F74464cE';
+    const amount = new BigNumber(10000);
+    const unsignedRaw = await gateway.constructRawTransaction(fromAddress, toAddress, amount, {isConsolidate: false});
+    const signedRaw = await gateway.signRawTransaction(unsignedRaw.unsignedRaw, privateKey);
     assert.exists(signedRaw.txid);
   });
 });
@@ -212,15 +218,24 @@ describe('EthGateway::test-sign-raw-tx-by-singer-private-key', () => {
 describe('EthGateway::test-send-raw-transaction', () => {
   const gateway = EthGateway.getInstance();
   it('Send raw transaction', async () => {
-    const fromAddress = '0x0d496aaDD275ddc6E3dAeE4c2b632e32F7A80Bb8';
-    const privateKey = 'B15D1288C2AD3DC725582B189E6383D088A29E7DAA9AB6E029BEF5C619AB13FC';
-    const vout = {
-      toAddress: '0xDD92809A181E3f51C5C57271477cBD33Cd9ac7E5',
-      amount: '10000',
-    };
-    const unsignedRaw = await gateway.createRawTransaction(fromAddress, [vout]);
-    const signedRaw = await gateway.signRawTxByPrivateKey(unsignedRaw.unsignedRaw, privateKey);
+    const fromAddress = '0xE688592F4a97c5a36754Df54d75f91e06BefF379';
+    const privateKey = '76e4a452fa0e139624713cf714b100fb00de93a3ef1f15f08070ebb6d4be2b93';
+    const toAddress = '0x22979347B41C30213f8EC9Be3D9e0252F74464cE';
+    const amount = new BigNumber(10000);
+    const unsignedRaw = await gateway.constructRawTransaction(fromAddress, toAddress, amount, {isConsolidate: false});
+    const signedRaw = await gateway.signRawTransaction(unsignedRaw.unsignedRaw, privateKey);
     const sendTx = await gateway.sendRawTransaction(signedRaw.signedRaw);
     assert.exists(sendTx.txid);
+  });
+});
+
+
+
+describe('EthGateway::test-get-erc20-info', () => {
+  const gateway = EthGateway.getInstance();
+  it('get erc20 token info success', async () => {
+    const contractAddress = "0xd06c202439356d5bb555a0bf4ce42459930a8d58"
+    const token = await gateway.getErc20TokenInfo(contractAddress);
+    assert.exists(token);
   });
 });
