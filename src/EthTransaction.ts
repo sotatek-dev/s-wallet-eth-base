@@ -1,7 +1,7 @@
 import { BlockHeader, BigNumber, AccountBasedTransaction, BlockchainPlatform, CurrencyRegistry } from 'sota-common';
 import { web3 } from './web3';
-import * as web3_types from 'web3/types';
-import * as eth_types from 'web3/eth/types';
+import * as web3_types from 'web3-core/types';
+import * as eth_types from 'web3-eth/types';
 
 export class EthTransaction extends AccountBasedTransaction {
   public readonly receiptStatus: boolean;
