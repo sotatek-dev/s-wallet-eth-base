@@ -3,20 +3,41 @@ var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
         extendStatics = Object.setPrototypeOf ||
             ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
         return extendStatics(d, b);
     };
     return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
         extendStatics(d, b);
         function __() { this.constructor = d; }
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
 };
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
@@ -60,22 +81,18 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.EthGateway = void 0;
+var lodash_1 = __importDefault(require("lodash"));
 var sota_common_1 = require("sota-common");
 var lru_cache_1 = __importDefault(require("lru-cache"));
 var EthTransaction_1 = require("./EthTransaction");
 var EthTypeConverter = __importStar(require("./EthTypeConverter"));
 var web3_1 = require("./web3");
 var erc20_json_1 = __importDefault(require("../config/abi/erc20.json"));
-var ethereumjs = __importStar(require("ethereumjs-tx"));
-var EthereumTx = ethereumjs.Transaction;
+var ethereumjs = __importStar(require("@ethereumjs/tx"));
+var common_1 = __importStar(require("@ethereumjs/common"));
+var EthereumTx = ethereumjs.FeeMarketEIP1559Transaction;
 var logger = sota_common_1.getLogger('EthGateway');
 var _cacheBlockNumber = {
     value: 0,
@@ -98,6 +115,9 @@ var EthGateway = (function (_super) {
     function EthGateway() {
         return _super.call(this, sota_common_1.CurrencyRegistry.Ethereum) || this;
     }
+    EthGateway.getInstance = function () {
+        return new EthGateway();
+    };
     EthGateway.prototype.getGasPrice = function (useLowerNetworkFee) {
         return __awaiter(this, void 0, void 0, function () {
             var baseGasPrice, _a, finalGasPrice, configMaxGasPrice, multipler, configMultiplerLow, configMultiplerHigh, multiplyGasPrice, plusGas, configPlusGas, plusGasPrice;
@@ -148,21 +168,66 @@ var EthGateway = (function (_super) {
             });
         });
     };
+    EthGateway.prototype.suggestFeesForEIP1559 = function () {
+        return __awaiter(this, void 0, void 0, function () {
+            var finalMaxFeePerGas, configMaxFeePerGas, block, baseFeePerGas, maxPriorityFeePerGas, _a, multipler, cfgMaxFeePterGasMultipler, maxFeePerGas;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        finalMaxFeePerGas = new sota_common_1.BigNumber(120000000000);
+                        configMaxFeePerGas = parseInt(sota_common_1.EnvConfigRegistry.getCustomEnvConfig('ETH_MAX_FEE_PER_GAS'), 10);
+                        if (!isNaN(configMaxFeePerGas)) {
+                            finalMaxFeePerGas = new sota_common_1.BigNumber(configMaxFeePerGas);
+                        }
+                        return [4, web3_1.web3.eth.getBlock('latest')];
+                    case 1:
+                        block = _b.sent();
+                        if (!block['baseFeePerGas']) {
+                            throw new Error('EthGateway::suggestFeesForEIP1559 not support for pre-eip-1559');
+                        }
+                        console.debug("block latest : " + block.hash);
+                        baseFeePerGas = new sota_common_1.BigNumber(block['baseFeePerGas']);
+                        _a = sota_common_1.BigNumber.bind;
+                        return [4, web3_1.web3.eth.getMaxPriorityFeePerGas()];
+                    case 2:
+                        maxPriorityFeePerGas = new (_a.apply(sota_common_1.BigNumber, [void 0, _b.sent()]))();
+                        if (isNaN(maxPriorityFeePerGas.toNumber()) || maxPriorityFeePerGas.isZero()) {
+                            throw new Error("EthGateway::constructRawTransaction could not construct tx, invalid maxPriorityFeePerGas: " + (maxPriorityFeePerGas || maxPriorityFeePerGas.toString()));
+                        }
+                        multipler = 2;
+                        cfgMaxFeePterGasMultipler = parseInt(sota_common_1.EnvConfigRegistry.getCustomEnvConfig('ETH_MAX_FEE_PER_GAS_MULTIPLER'), 10);
+                        if (!isNaN(cfgMaxFeePterGasMultipler)) {
+                            multipler = cfgMaxFeePterGasMultipler;
+                        }
+                        maxFeePerGas = baseFeePerGas.multipliedBy(multipler).plus(maxPriorityFeePerGas);
+                        if (maxFeePerGas.gt(finalMaxFeePerGas)) {
+                            maxFeePerGas = finalMaxFeePerGas;
+                        }
+                        if (maxPriorityFeePerGas.gt(finalMaxFeePerGas)) {
+                            maxPriorityFeePerGas = finalMaxFeePerGas;
+                        }
+                        return [2, {
+                                maxFeePerGas: maxFeePerGas,
+                                maxPriorityFeePerGas: maxPriorityFeePerGas
+                            }];
+                }
+            });
+        });
+    };
     EthGateway.prototype.getParallelNetworkRequestLimit = function () {
         return 100;
     };
     EthGateway.prototype.getAverageSeedingFee = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var gasPrice, _a, _b, gasLimit, result;
-            return __generator(this, function (_c) {
-                switch (_c.label) {
-                    case 0:
-                        _b = (_a = web3_1.web3.utils).toBN;
-                        return [4, this.getGasPrice()];
+            var feeMarket, maxFeePerGas, gasLimit, result;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4, this.suggestFeesForEIP1559()];
                     case 1:
-                        gasPrice = _b.apply(_a, [_c.sent()]);
-                        gasLimit = web3_1.web3.utils.toBN(150000);
-                        result = gasPrice.mul(gasLimit);
+                        feeMarket = _a.sent();
+                        maxFeePerGas = web3_1.web3.utils.toBN(feeMarket.maxFeePerGas.toString());
+                        gasLimit = web3_1.web3.utils.toBN(21000);
+                        result = maxFeePerGas.mul(gasLimit);
                         return [2, new sota_common_1.BigNumber(result.toString())];
                 }
             });
@@ -247,56 +312,60 @@ var EthGateway = (function (_super) {
     };
     EthGateway.prototype.constructRawTransaction = function (fromAddress, toAddress, value, options) {
         return __awaiter(this, void 0, void 0, function () {
-            var amount, nonce, _gasPrice, gasPrice, gasLimit, fee, balance, _a, _b, txParams, tx;
+            var amount, nonce, feeMarket, _maxFeePerGas, maxFeePerGas, maxPriorityFeePerGas, gasLimit, fee, zero, balance, _a, _b, txParams, tx;
             return __generator(this, function (_c) {
                 switch (_c.label) {
                     case 0:
-                        amount = web3_1.web3.utils.toBN(value);
+                        amount = web3_1.web3.utils.toBN(value.toString());
                         return [4, web3_1.web3.eth.getTransactionCount(fromAddress)];
                     case 1:
                         nonce = _c.sent();
-                        if (!options.explicitGasPrice) return [3, 2];
-                        _gasPrice = new sota_common_1.BigNumber(options.explicitGasPrice);
-                        return [3, 4];
-                    case 2: return [4, this.getGasPrice(options.useLowerNetworkFee)];
-                    case 3:
-                        _gasPrice = _c.sent();
-                        _c.label = 4;
-                    case 4:
-                        if (!_gasPrice || !_gasPrice.gt(new sota_common_1.BigNumber(0))) {
-                            throw new Error("EthGateway::constructRawTransaction could not construct tx, invalid gas price: " + (_gasPrice || _gasPrice.toString()));
+                        return [4, this.suggestFeesForEIP1559()];
+                    case 2:
+                        feeMarket = _c.sent();
+                        if (options.explicitGasPrice) {
+                            _maxFeePerGas = new sota_common_1.BigNumber(options.explicitGasPrice);
                         }
                         else {
-                            logger.debug("EthGateway::constructRawTransaction gasPrice=" + _gasPrice.toString());
+                            _maxFeePerGas = feeMarket.maxFeePerGas;
                         }
-                        gasPrice = web3_1.web3.utils.toBN(_gasPrice);
+                        maxFeePerGas = web3_1.web3.utils.toBN(_maxFeePerGas.toString());
+                        maxPriorityFeePerGas = web3_1.web3.utils.toBN(feeMarket.maxPriorityFeePerGas.toString());
                         gasLimit = web3_1.web3.utils.toBN(options.isConsolidate ? 21000 : 150000);
                         if (options.explicitGasLimit) {
                             gasLimit = web3_1.web3.utils.toBN(options.explicitGasLimit);
                         }
-                        fee = gasLimit.mul(gasPrice);
+                        fee = gasLimit.mul(maxFeePerGas);
                         if (options.isConsolidate) {
                             amount = amount.sub(fee);
                         }
+                        zero = web3_1.web3.utils.toBN(0);
+                        if (amount.lt(zero)) {
+                            amount = zero;
+                        }
                         _b = (_a = web3_1.web3.utils).toBN;
                         return [4, web3_1.web3.eth.getBalance(fromAddress)];
-                    case 5:
+                    case 3:
                         balance = _b.apply(_a, [(_c.sent()).toString()]);
                         if (balance.lt(amount.add(fee))) {
                             throw new Error("EthGateway::constructRawTransaction could not construct tx because of insufficient balance:          address=" + fromAddress + ", balance=" + balance + ", amount=" + amount + ", fee=" + fee);
                         }
                         txParams = {
-                            gasLimit: web3_1.web3.utils.toHex(options.isConsolidate ? 21000 : 150000),
-                            gasPrice: web3_1.web3.utils.toHex(gasPrice),
+                            maxFeePerGas: maxFeePerGas,
+                            maxPriorityFeePerGas: maxPriorityFeePerGas,
+                            gasLimit: web3_1.web3.utils.toHex(gasLimit),
                             nonce: web3_1.web3.utils.toHex(nonce),
                             to: toAddress,
                             value: web3_1.web3.utils.toHex(amount),
                             data: '0x',
+                            chainId: this.getChainId(),
                         };
                         logger.info("EthGateway::constructRawTransaction txParams=" + JSON.stringify(txParams));
-                        tx = new EthereumTx(txParams);
+                        tx = new EthereumTx(txParams, {
+                            common: new common_1.default({ chain: this.getChainName(), hardfork: common_1.Hardfork.London })
+                        });
                         return [2, {
-                                txid: "0x" + tx.hash().toString('hex'),
+                                txid: "0x" + tx.getMessageToSign().toString('hex'),
                                 unsignedRaw: tx.serialize().toString('hex'),
                             }];
                 }
@@ -304,40 +373,41 @@ var EthGateway = (function (_super) {
         });
     };
     EthGateway.prototype.reconstructRawTx = function (rawTx) {
-        var tx = new EthereumTx(rawTx);
+        var tx = EthereumTx.fromSerializedTx(Buffer.from(rawTx, 'hex'));
         return {
-            txid: "0x" + tx.hash().toString('hex'),
+            txid: "0x" + tx.getMessageToSign().toString('hex'),
             unsignedRaw: tx.serialize().toString('hex'),
         };
     };
     EthGateway.prototype.signRawTransaction = function (unsignedRaw, secret) {
         return __awaiter(this, void 0, void 0, function () {
-            var ethTx, privateKey;
+            var ethTx, privateKey, signedTx;
             return __generator(this, function (_a) {
                 if (secret.startsWith('0x')) {
                     secret = secret.substr(2);
                 }
-                ethTx = new EthereumTx(unsignedRaw, { chain: this.getChainName() });
+                ethTx = EthereumTx.fromSerializedTx(Buffer.from(unsignedRaw, 'hex'));
                 privateKey = Buffer.from(secret, 'hex');
-                ethTx.sign(privateKey);
+                signedTx = ethTx.sign(privateKey);
                 return [2, {
-                        txid: "0x" + ethTx.hash().toString('hex'),
-                        signedRaw: ethTx.serialize().toString('hex'),
+                        txid: "0x" + signedTx.hash().toString('hex'),
+                        signedRaw: signedTx.serialize().toString('hex'),
                         unsignedRaw: unsignedRaw,
                     }];
             });
         });
     };
-    EthGateway.prototype.sendRawTransaction = function (rawTx, retryCount) {
+    EthGateway.prototype.sendRawTransaction = function (signedTx, retryCount) {
         return __awaiter(this, void 0, void 0, function () {
-            var ethTx, txid, _a, receipt, infuraReceipt, e_1, tx;
+            var rawTx, ethTx, txid, _a, receipt, infuraReceipt, e_1, tx;
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
+                        rawTx = signedTx;
                         if (!rawTx.startsWith('0x')) {
                             rawTx = '0x' + rawTx;
                         }
-                        ethTx = new EthereumTx(rawTx, { chain: this.getChainName() });
+                        ethTx = EthereumTx.fromSerializedTx(Buffer.from(signedTx, 'hex'));
                         txid = ethTx.hash().toString('hex');
                         if (!txid.startsWith('0x')) {
                             txid = '0x' + txid;
@@ -383,7 +453,7 @@ var EthGateway = (function (_super) {
                             logger.error("Too many fails sending txid=" + txid + " tx=" + JSON.stringify(ethTx.toJSON()) + " err=" + e_1.toString());
                             throw e_1;
                         }
-                        return [2, this.sendRawTransaction(rawTx, retryCount + 1)];
+                        return [2, this.sendRawTransaction(signedTx, retryCount + 1)];
                     case 6: return [2];
                 }
             });
@@ -567,16 +637,15 @@ var EthGateway = (function (_super) {
     };
     EthGateway.prototype.estimateFee = function (options) {
         return __awaiter(this, void 0, void 0, function () {
-            var gasPrice, _a, _b, gasLimit, fee;
-            return __generator(this, function (_c) {
-                switch (_c.label) {
-                    case 0:
-                        _b = (_a = web3_1.web3.utils).toBN;
-                        return [4, this.getGasPrice(options.useLowerNetworkFee)];
+            var feeMarket, maxFeePerGas, gasLimit, fee;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4, this.suggestFeesForEIP1559()];
                     case 1:
-                        gasPrice = _b.apply(_a, [_c.sent()]);
+                        feeMarket = _a.sent();
+                        maxFeePerGas = web3_1.web3.utils.toBN(feeMarket.maxFeePerGas.toString());
                         gasLimit = web3_1.web3.utils.toBN(options.isConsolidate ? 21000 : 150000);
-                        fee = gasLimit.mul(gasPrice);
+                        fee = gasLimit.mul(maxFeePerGas);
                         return [2, new sota_common_1.BigNumber(fee.toString())];
                 }
             });
@@ -587,14 +656,18 @@ var EthGateway = (function (_super) {
             var block, txids;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4, web3_1.web3.eth.getBlock(EthTypeConverter.toBlockType(blockNumber))];
+                    case 0: return [4, web3_1.web3.eth.getBlock(EthTypeConverter.toBlockType(blockNumber), true)];
                     case 1:
                         block = _a.sent();
                         if (!block) {
                             return [2, null];
                         }
                         txids = block.transactions.map(function (tx) { return (tx.hash ? tx.hash : tx.toString()); });
-                        return [2, new sota_common_1.Block(Object.assign({}, block), txids)];
+                        return [2, new sota_common_1.Block({
+                                hash: block.hash,
+                                number: block.number,
+                                timestamp: lodash_1.default.toNumber(block.timestamp),
+                            }, txids)];
                 }
             });
         });

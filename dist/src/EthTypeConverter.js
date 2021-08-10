@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.toBlockType = void 0;
 function toBlockType(blockNumber) {
     if (typeof blockNumber === 'number') {
         return blockNumber;
