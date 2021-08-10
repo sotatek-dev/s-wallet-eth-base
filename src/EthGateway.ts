@@ -294,7 +294,6 @@ export class EthGateway extends AccountBasedGateway {
       _maxFeePerGas = new BigNumber(options.explicitGasPrice);
     } else {
       _maxFeePerGas = feeMarket.maxFeePerGas;
-
     }
 
     const maxFeePerGas = web3.utils.toBN(_maxFeePerGas.toString());
