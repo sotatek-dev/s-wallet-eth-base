@@ -9,16 +9,17 @@
   "author": "an.nguyen@sotatek.com",
   "license": "ISC",
   "dependencies": {
+    "@ethereumjs/vm": "^5.5.2",
+    "@types/bn.js": "^5.1.0",
     "@types/ethereumjs-tx": "1.0.1",
     "@types/lodash": "4.14.119",
     "@types/lru-cache": "5.1.0",
     "@types/web3": "1.0.14",
-    "ethereumjs-tx": "2.1.2",
     "lodash": "4.17.11",
     "lru-cache": "5.1.1",
     "p-limit": "2.2.0",
     "sota-common": "npm:@sotatek/crypto-currency-common@^0.*",
-    "web3": "1.0.0-beta.37"
+    "web3": "1.5.1"
   },
   "peerDependencies": {
     "sota-common": "npm:@sotatek/crypto-currency-common@^0.*"
