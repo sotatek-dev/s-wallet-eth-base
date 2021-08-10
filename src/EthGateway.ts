@@ -1,7 +1,6 @@
 import _ from 'lodash';
-import * as web3_accounts from 'web3/eth/accounts';
-import * as web3_types from 'web3/eth/types';
-import * as web3_types2 from 'web3/types';
+import * as web3_types from 'web3-eth/types';
+import * as web3_types2 from 'web3-core/types';
 import {
   Block,
   AccountBasedGateway,
@@ -28,9 +27,17 @@ import { EthTransaction } from './EthTransaction';
 import * as EthTypeConverter from './EthTypeConverter';
 import { web3, infuraWeb3 } from './web3';
 import ERC20ABI from '../config/abi/erc20.json';
-import * as ethereumjs from 'ethereumjs-tx';
+import * as ethereumjs from '@ethereumjs/tx';
+import Common, {Hardfork} from '@ethereumjs/common';
+import {v4} from 'uuid';
+interface FeeMarketEIP1559 {
+  //the maximum amount that a user is willing to pay for their tx
+  readonly maxFeePerGas: BigNumber;
 
-const EthereumTx = ethereumjs.Transaction;
+  //the part of the tx fee that goes to the miner
+  readonly maxPriorityFeePerGas: BigNumber;
+}
+const EthereumTx = ethereumjs.FeeMarketEIP1559Transaction;
 const logger = getLogger('EthGateway');
 const _cacheBlockNumber = {
   value: 0,
@@ -54,6 +61,10 @@ GatewayRegistry.registerLazyCreateMethod(CurrencyRegistry.Ethereum, () => new Et
 export class EthGateway extends AccountBasedGateway {
   public constructor() {
     super(CurrencyRegistry.Ethereum);
+  }
+
+  public static getInstance(){
+    return new EthGateway();
   }
 
   /**
@@ -113,14 +124,67 @@ export class EthGateway extends AccountBasedGateway {
     return finalGasPrice;
   }
 
+  /**
+   * Currently maxFeePerGas will be calculated using the formula
+   * maxFeePerGas = 2 * baseFeePerGas + maxPriorityFeePerGas
+   * - absolute 120 gwei
+   * - if maxFeePerGas > 120 gwei, just use maxFeePerGas = 120 gwei
+   * 
+   * TODO: need to implement a fee oracle based on feeHistory API
+   */
+  public async suggestFeesForEIP1559(): Promise<FeeMarketEIP1559> {
+    // To prevent drain attack, set max fee per gas as 120 gwei
+    // This value can be override via the config ETH_MAX_FEE_PER_GAS
+    let finalMaxFeePerGas: BigNumber = new BigNumber(120000000000);
+    const configMaxFeePerGas = parseInt(EnvConfigRegistry.getCustomEnvConfig('ETH_MAX_FEE_PER_GAS'), 10);
+    if (!isNaN(configMaxFeePerGas)) {
+      finalMaxFeePerGas = new BigNumber(configMaxFeePerGas);
+    }
+
+    const block = await web3.eth.getBlock('latest');
+    if (!block['baseFeePerGas']) {
+        throw new Error('EthGateway::suggestFeesForEIP1559 not support for pre-eip-1559');
+    }
+    console.debug(`block latest : ${block.hash}`)
+    const baseFeePerGas = new BigNumber(block['baseFeePerGas']);
+
+    let maxPriorityFeePerGas = new BigNumber(await (web3.eth as any).getMaxPriorityFeePerGas());
+    if (isNaN(maxPriorityFeePerGas.toNumber()) || maxPriorityFeePerGas.isZero()) {
+      throw new Error(
+        `EthGateway::constructRawTransaction could not construct tx, invalid maxPriorityFeePerGas: ${maxPriorityFeePerGas || maxPriorityFeePerGas.toString()}`
+      );
+    }
+    // This value can be override via the config ETH_MAX_FEE_PER_GAS_MULTIPLER
+    let multipler = 2;
+    const cfgMaxFeePterGasMultipler = parseInt(EnvConfigRegistry.getCustomEnvConfig('ETH_MAX_FEE_PER_GAS_MULTIPLER'), 10);
+    if (!isNaN(cfgMaxFeePterGasMultipler)) {
+        multipler = cfgMaxFeePterGasMultipler;
+    }
+    
+    let maxFeePerGas = baseFeePerGas.multipliedBy(multipler).plus(maxPriorityFeePerGas);
+    if (maxFeePerGas.gt(finalMaxFeePerGas)){
+      maxFeePerGas = finalMaxFeePerGas;
+    }
+    
+    if (maxPriorityFeePerGas.gt(finalMaxFeePerGas)) {
+      maxPriorityFeePerGas = finalMaxFeePerGas;
+    }
+
+    return {
+        maxFeePerGas,
+        maxPriorityFeePerGas
+    }
+  }
+
   public getParallelNetworkRequestLimit() {
     return 100;
   }
 
   public async getAverageSeedingFee(): Promise<BigNumber> {
-    const gasPrice = web3.utils.toBN(await this.getGasPrice());
-    const gasLimit = web3.utils.toBN(150000); // For ETH transaction 21000 gas is fixed
-    const result = gasPrice.mul(gasLimit);
+    const feeMarket = await this.suggestFeesForEIP1559();
+    const maxFeePerGas = web3.utils.toBN(feeMarket.maxFeePerGas.toString());
+    const gasLimit = web3.utils.toBN(21000); // For ETH transaction 21000 gas is fixed
+    const result = maxFeePerGas.mul(gasLimit);
     return new BigNumber(result.toString());
   }
 
@@ -142,11 +206,11 @@ export class EthGateway extends AccountBasedGateway {
    *
    * @returns {IAccount} the account object
    */
-  public async createAccountAsync(): Promise<web3_accounts.Account> {
+  public async createAccountAsync(): Promise<web3_types2.Account> {
     return web3.eth.accounts.create();
   }
 
-  public async getAccountFromPrivateKey(privateKey: string): Promise<web3_accounts.Account> {
+  public async getAccountFromPrivateKey(privateKey: string): Promise<web3_types2.Account> {
     if (privateKey.indexOf('0x') < 0) {
       privateKey = '0x' + privateKey;
     }
@@ -215,46 +279,41 @@ export class EthGateway extends AccountBasedGateway {
     toAddress: Address,
     value: BigNumber,
     options: {
-      isConsolidate: false;
+      isConsolidate: boolean;
       destinationTag?: string;
       useLowerNetworkFee?: boolean;
       explicitGasPrice?: number,
       explicitGasLimit?: number,
     }
   ): Promise<IRawTransaction> {
-    let amount = web3.utils.toBN(value);
+    let amount = web3.utils.toBN(value.toString());
     const nonce = await web3.eth.getTransactionCount(fromAddress);
-    let _gasPrice: BigNumber;
+    const feeMarket = await this.suggestFeesForEIP1559();
+    let _maxFeePerGas: BigNumber;
     if (options.explicitGasPrice) {
-      _gasPrice = new BigNumber(options.explicitGasPrice);
+      _maxFeePerGas = new BigNumber(options.explicitGasPrice);
     } else {
-      _gasPrice = await this.getGasPrice(options.useLowerNetworkFee);
+      _maxFeePerGas = feeMarket.maxFeePerGas;
+
     }
 
-    /**
-     * Workaround for the issue in 2021-06
-     * Something went wrong when getting gas price
-     * We'll throw error if gas price is not set or zero
-     */
-    if (!_gasPrice || !_gasPrice.gt(new BigNumber(0))) {
-      throw new Error(
-        `EthGateway::constructRawTransaction could not construct tx, invalid gas price: ${_gasPrice || _gasPrice.toString()}`
-      );
-    } else {
-      logger.debug(`EthGateway::constructRawTransaction gasPrice=${_gasPrice.toString()}`);
-    }
-
-    const gasPrice = web3.utils.toBN(_gasPrice);
+    const maxFeePerGas = web3.utils.toBN(_maxFeePerGas.toString());
+    const maxPriorityFeePerGas = web3.utils.toBN(feeMarket.maxPriorityFeePerGas.toString());
 
     let gasLimit = web3.utils.toBN(options.isConsolidate ? 21000 : 150000); // Maximum gas allow for Ethereum transaction
     if (options.explicitGasLimit) {
       gasLimit = web3.utils.toBN(options.explicitGasLimit);
     }
 
-    const fee = gasLimit.mul(gasPrice);
+    const fee = gasLimit.mul(maxFeePerGas);
 
     if (options.isConsolidate) {
       amount = amount.sub(fee);
+    }
+
+    const zero = web3.utils.toBN(0);
+    if (amount.lt(zero)) {
+      amount = zero;
     }
 
     // Check whether the balance of hot wallet is enough to send
@@ -267,19 +326,23 @@ export class EthGateway extends AccountBasedGateway {
     }
 
     const txParams = {
-      gasLimit: web3.utils.toHex(options.isConsolidate ? 21000 : 150000),
-      gasPrice: web3.utils.toHex(gasPrice),
+      maxFeePerGas: maxFeePerGas,
+      maxPriorityFeePerGas: maxPriorityFeePerGas,
+      gasLimit: web3.utils.toHex(gasLimit),
       nonce: web3.utils.toHex(nonce),
       to: toAddress,
       value: web3.utils.toHex(amount),
       data: '0x',
+      chainId: this.getChainId(),
     };
     logger.info(`EthGateway::constructRawTransaction txParams=${JSON.stringify(txParams)}`);
 
-    const tx = new EthereumTx(txParams);
+    const tx = new EthereumTx(txParams, {
+      common: new Common({chain: this.getChainName(), hardfork: Hardfork.London})
+    });
 
     return {
-      txid: `0x${tx.hash().toString('hex')}`,
+      txid: `0x${tx.getMessageToSign().toString('hex')}`,
       unsignedRaw: tx.serialize().toString('hex'),
     };
   }
@@ -289,9 +352,9 @@ export class EthGateway extends AccountBasedGateway {
    * @param rawTx
    */
   public reconstructRawTx(rawTx: string): IRawTransaction {
-    const tx = new EthereumTx(rawTx);
+    const tx = EthereumTx.fromSerializedTx(Buffer.from(rawTx, 'hex'));
     return {
-      txid: `0x${tx.hash().toString('hex')}`,
+      txid: `0x${tx.getMessageToSign().toString('hex')}`,
       unsignedRaw: tx.serialize().toString('hex'),
     };
   }
@@ -306,13 +369,12 @@ export class EthGateway extends AccountBasedGateway {
       secret = secret.substr(2);
     }
 
-    const ethTx = new EthereumTx(unsignedRaw, { chain: this.getChainName()});
+    const ethTx = EthereumTx.fromSerializedTx(Buffer.from(unsignedRaw, 'hex'));
     const privateKey = Buffer.from(secret, 'hex');
-    ethTx.sign(privateKey);
-
+    const signedTx = ethTx.sign(privateKey);
     return {
-      txid: `0x${ethTx.hash().toString('hex')}`,
-      signedRaw: ethTx.serialize().toString('hex'),
+      txid: `0x${signedTx.hash().toString('hex')}`,
+      signedRaw: signedTx.serialize().toString('hex'),
       unsignedRaw,
     };
   }
@@ -320,15 +382,15 @@ export class EthGateway extends AccountBasedGateway {
   /**
    * Validate a transaction and broadcast it to the blockchain network
    *
-   * @param {String} rawTx: the hex-encoded transaction data
+   * @param {String} signedTx: the hex-encoded transaction data
    * @returns {String}: the transaction hash in hex
    */
-  public async sendRawTransaction(rawTx: string, retryCount?: number): Promise<ISubmittedTransaction> {
+  public async sendRawTransaction(signedTx: string, retryCount?: number): Promise<ISubmittedTransaction> {
+    let rawTx = signedTx;
     if (!rawTx.startsWith('0x')) {
       rawTx = '0x' + rawTx;
     }
-
-    const ethTx = new EthereumTx(rawTx, { chain: this.getChainName()});
+    const ethTx = EthereumTx.fromSerializedTx(Buffer.from(signedTx, 'hex'));
     let txid = ethTx.hash().toString('hex');
     if (!txid.startsWith('0x')) {
       txid = '0x' + txid;
@@ -381,7 +443,7 @@ export class EthGateway extends AccountBasedGateway {
         throw e;
       }
 
-      return this.sendRawTransaction(rawTx, retryCount + 1);
+      return this.sendRawTransaction(signedTx, retryCount + 1);
     }
   }
 
@@ -496,7 +558,7 @@ export class EthGateway extends AccountBasedGateway {
   public async getErc20TokenInfo(contractAddress: string): Promise<IErc20Token> {
     contractAddress = this.normalizeAddress(contractAddress);
     try {
-      const contract = new web3.eth.Contract(ERC20ABI, contractAddress);
+      const contract = new web3.eth.Contract(ERC20ABI as any, contractAddress);
       const [networkSymbol, name, decimals] = await Promise.all([
         contract.methods.symbol().call(),
         contract.methods.name().call(),
@@ -537,9 +599,10 @@ export class EthGateway extends AccountBasedGateway {
   }
 
   public async estimateFee(options: { isConsolidate: boolean; useLowerNetworkFee?: boolean }): Promise<BigNumber> {
-    const gasPrice = web3.utils.toBN(await this.getGasPrice(options.useLowerNetworkFee));
+    const feeMarket = await this.suggestFeesForEIP1559();
+    const maxFeePerGas = web3.utils.toBN(feeMarket.maxFeePerGas.toString());
     const gasLimit = web3.utils.toBN(options.isConsolidate ? 21000 : 150000); // Maximum gas allow for Ethereum transaction
-    const fee = gasLimit.mul(gasPrice);
+    const fee = gasLimit.mul(maxFeePerGas);
     return new BigNumber(fee.toString());
   }
 
@@ -550,13 +613,17 @@ export class EthGateway extends AccountBasedGateway {
    * @returns {Block} block: the block detail
    */
   protected async _getOneBlock(blockNumber: string | number): Promise<Block> {
-    const block = await web3.eth.getBlock(EthTypeConverter.toBlockType(blockNumber));
+    const block = await web3.eth.getBlock(EthTypeConverter.toBlockType(blockNumber), true);
     if (!block) {
       return null;
     }
 
     const txids = block.transactions.map(tx => (tx.hash ? tx.hash : tx.toString()));
-    return new Block(Object.assign({}, block), txids);
+    return new Block({
+      hash: block.hash, 
+      number: block.number,
+      timestamp: _.toNumber(block.timestamp),
+    }, txids);
   }
 
   /**

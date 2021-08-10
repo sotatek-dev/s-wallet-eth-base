@@ -1,10 +1,25 @@
-import Web3 = require('web3');
+import Web3 from 'web3';
+import {formatters} from 'web3-core-helpers';
 import { EnvConfigRegistry, NetworkType, CurrencyRegistry, BlockchainPlatform, getLogger } from 'sota-common';
 
 const logger = getLogger('web3');
 
 const web3 = new Web3();
 const infuraWeb3 = new Web3();
+
+//web3 library does not currently implement the eth_maxPriorityFeePerGas method
+//we will add implementation using extend
+web3.extend({
+  property: 'eth',
+  methods: [
+    {
+      name: 'getMaxPriorityFeePerGas',
+      call: 'eth_maxPriorityFeePerGas',
+      params: 0,
+      outputFormatter: formatters.outputBigNumberFormatter,
+    } as any
+  ]
+})
 
 EnvConfigRegistry.onNetworkChanged(network => {
   logger.info(`web3::onNetworkChanged network=${network}`);

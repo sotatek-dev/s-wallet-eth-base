@@ -1,8 +1,9 @@
 import EthGateway from './EthGateway';
-import Contract from 'web3/eth/contract';
+import {Contract} from 'web3-eth-contract';
 import { web3 } from './web3';
 import _ from 'lodash';
-import * as ethereumjs from 'ethereumjs-tx';
+import * as ethereumjs from '@ethereumjs/tx';
+import Common, {Hardfork} from '@ethereumjs/common';
 import {
   IRawTransaction,
   IErc20Token,
@@ -25,7 +26,7 @@ import Erc20Transaction from './Erc20Transaction';
 import ERC20ABI from '../config/abi/erc20.json';
 
 const logger = getLogger('Erc20Gateway');
-const EthereumTx = ethereumjs.Transaction;
+const EthereumTx = ethereumjs.FeeMarketEIP1559Transaction;
 
 CurrencyRegistry.onERC20TokenRegistered((token: IErc20Token) => {
   logger.info(`Register Erc20Gateway to the registry: ${token.symbol}`);
@@ -39,7 +40,7 @@ export class Erc20Gateway extends AccountBasedGateway {
 
   public constructor(currency: IErc20Token) {
     super(currency);
-    this._contract = new web3.eth.Contract(ERC20ABI, currency.contractAddress);
+    this._contract = new web3.eth.Contract(ERC20ABI as any, currency.contractAddress);
     this._ethGateway = GatewayRegistry.getGatewayInstance(CurrencyRegistry.Ethereum) as EthGateway;
   }
 
@@ -64,29 +65,18 @@ export class Erc20Gateway extends AccountBasedGateway {
       explicitGasLimit?: number;
     }
   ): Promise<IRawTransaction> {
-    const amount = web3.utils.toBN(value);
+    const amount = web3.utils.toBN(value.toFixed());
     const nonce = await web3.eth.getTransactionCount(fromAddress);
-    let _gasPrice: BigNumber;
+    const feeMarket = await this._ethGateway.suggestFeesForEIP1559();
+    let _maxFeePerGas: BigNumber;
     if (options.explicitGasPrice) {
-      _gasPrice = new BigNumber(options.explicitGasPrice);
+      _maxFeePerGas = new BigNumber(options.explicitGasPrice);
     } else {
-      _gasPrice = await this._ethGateway.getGasPrice(options.useLowerNetworkFee);
+      _maxFeePerGas = feeMarket.maxFeePerGas;
     }
 
-    /**
-     * Workaround for the issue in 2021-06
-     * Something went wrong when getting gas price
-     * We'll throw error if gas price is not set or zero
-     */
-     if (!_gasPrice || !_gasPrice.gt(new BigNumber(0))) {
-      throw new Error(
-        `Erc20Gateway::constructRawTransaction could not construct tx, invalid gas price: ${_gasPrice || _gasPrice.toString()}`
-      );
-    } else {
-      logger.debug(`Erc20Gateway::constructRawTransaction gasPrice=${_gasPrice.toString()}`);
-    }
-
-    const gasPrice = web3.utils.toBN(_gasPrice);
+    const maxFeePerGas = web3.utils.toBN(_maxFeePerGas.toString());
+    const maxPriorityFeePerGas = web3.utils.toBN(feeMarket.maxPriorityFeePerGas.toString());
 
     let _gasLimit: number;
     if (options.explicitGasLimit) {
@@ -113,11 +103,11 @@ export class Erc20Gateway extends AccountBasedGateway {
     }
 
     const gasLimit = web3.utils.toBN(_gasLimit);
-    const fee = gasLimit.mul(gasPrice);
+    const fee = gasLimit.mul(maxFeePerGas);
 
     // Check whether the balance of hot wallet is enough to send
     const ethBalance = web3.utils.toBN((await web3.eth.getBalance(fromAddress)).toString());
-    const balance = web3.utils.toBN(await this.getAddressBalance(fromAddress));
+    const balance = web3.utils.toBN((await this.getAddressBalance(fromAddress)).toString());
     if (balance.lt(amount)) {
       throw new Error(
         `Erc20Gateway::constructRawTransaction Could not construct tx because of insufficient balance: address=${fromAddress}, amount=${amount}, fee=${fee}`
@@ -132,18 +122,22 @@ export class Erc20Gateway extends AccountBasedGateway {
 
     const txParams = {
       data: this._contract.methods.transfer(toAddress, amount.toString()).encodeABI(),
+      maxFeePerGas: web3.utils.toHex(maxFeePerGas),
+      maxPriorityFeePerGas: web3.utils.toHex(maxPriorityFeePerGas),
       gasLimit: web3.utils.toHex(gasLimit),
-      gasPrice: web3.utils.toHex(gasPrice),
       nonce: web3.utils.toHex(nonce),
       to: this._currency.contractAddress,
       value: web3.utils.toHex(0),
-    };
+      chainId: this._ethGateway.getChainId()
+  }
     logger.info(`Erc20Gateway::constructRawTransaction txParams=${JSON.stringify(txParams)}`);
 
-    const tx = new EthereumTx(txParams);
+    const tx = new EthereumTx(txParams, {
+      common: new Common({chain: this._ethGateway.getChainName(), hardfork: Hardfork.London})
+    });
 
     return {
-      txid: `0x${tx.hash().toString('hex')}`,
+      txid: `0x${tx.getMessageToSign().toString('hex')}`,
       unsignedRaw: tx.serialize().toString('hex'),
     };
   }
