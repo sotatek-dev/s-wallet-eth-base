@@ -1,5 +1,4 @@
 import EthGateway from './EthGateway';
-import Contract from 'web3/eth/contract';
 import { web3 } from './web3';
 import _ from 'lodash';
 import * as ethereumjs from 'ethereumjs-tx';
@@ -34,7 +33,7 @@ CurrencyRegistry.onERC20TokenRegistered((token: IErc20Token) => {
 });
 
 export class Erc20Gateway extends AccountBasedGateway {
-  protected _contract: Contract;
+  protected _contract: any;
   protected _currency: IErc20Token;
   protected _ethGateway: EthGateway;
 
@@ -49,8 +48,8 @@ export class Erc20Gateway extends AccountBasedGateway {
   }
 
   @implement
-  public async getAddressBalance(address: string): Promise<BigNumber> {
-    const balance = await this._contract.methods.balanceOf(address).call();
+  public async getAddressBalance(address: string, blockNumber?: number): Promise<BigNumber> {
+    const balance = await this._contract.methods.balanceOf(address).call({}, blockNumber);
     return new BigNumber(balance.toString());
   }
 

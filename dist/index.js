@@ -10,4 +10,5 @@ __export(require("./src/EthTransaction"));
 __export(require("./src/Erc20Transaction"));
 __export(require("./src/EthWebServer"));
 __export(require("./src/EthCrawler"));
+__export(require("./src/web3"));
 //# sourceMappingURL=index.js.map

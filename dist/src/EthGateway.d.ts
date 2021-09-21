@@ -12,7 +12,7 @@ export declare class EthGateway extends AccountBasedGateway {
     createAccountAsync(): Promise<web3_accounts.Account>;
     getAccountFromPrivateKey(privateKey: string): Promise<web3_accounts.Account>;
     isValidAddressAsync(address: string): Promise<boolean>;
-    getAddressBalance(address: string): Promise<BigNumber>;
+    getAddressBalance(address: string, blockNumber?: number): Promise<BigNumber>;
     getBlockCount(): Promise<number>;
     constructRawTransaction(fromAddress: Address, toAddress: Address, value: BigNumber, options: {
         isConsolidate: false;
