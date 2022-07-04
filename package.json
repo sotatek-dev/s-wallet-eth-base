@@ -17,11 +17,11 @@
     "lodash": "4.17.11",
     "lru-cache": "5.1.1",
     "p-limit": "2.2.0",
-    "sota-common": "npm:@sotatek/crypto-currency-common@^0.*",
+    "sota-common": "git+ssh://git@github.com:sotatek-dev/scc-common.git#features/add-polygon-network-config",
     "web3": "1.0.0-beta.37"
   },
   "peerDependencies": {
-    "sota-common": "npm:@sotatek/crypto-currency-common@^0.*"
+    "sota-common": "git+ssh://git@github.com:sotatek-dev/scc-common.git#features/add-polygon-network-config"
   },
   "devDependencies": {
     "@types/node": "13.9.0",
