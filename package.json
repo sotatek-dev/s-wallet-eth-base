@@ -4,7 +4,8 @@
   "description": "Common package to handle Ethereum stuffs",
   "main": "dist/index.js",
   "scripts": {
-    "test": "NETWORK=rinkeby mocha --timeout 15000 -r ts-node/register ./test/testEthGateway.spec.ts"
+    "test": "NETWORK=rinkeby mocha --timeout 15000 -r ts-node/register ./test/testEthGateway.spec.ts",
+    "build": "tsc"
   },
   "author": "an.nguyen@sotatek.com",
   "license": "ISC",
@@ -20,14 +21,14 @@
     "lru-cache": "5.1.1",
     "p-limit": "2.2.0",
     "sota-common": "git+ssh://git@github.com:sotatek-dev/scc-common.git#features/add-polygon-network-config",
-    "web3": "1.0.0-beta.37"
+    "web3": "1.0.0-beta.37",
+    "typescript": "3.8.3"
   },
   "peerDependencies": {
     "sota-common": "git+ssh://git@github.com:sotatek-dev/scc-common.git#features/add-polygon-network-config"
   },
   "devDependencies": {
-    "@types/node": "13.9.0",
-    "typescript": "3.8.3"
+    "@types/node": "13.9.0"
   },
   "repository": {
     "type": "git",
