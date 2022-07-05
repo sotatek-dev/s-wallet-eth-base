@@ -9,6 +9,8 @@
   "author": "an.nguyen@sotatek.com",
   "license": "ISC",
   "dependencies": {
+    "@ethereumjs/common": "^2.6.5",
+    "@ethereumjs/tx": "^3.5.2",
     "@types/ethereumjs-tx": "1.0.1",
     "@types/lodash": "4.14.119",
     "@types/lru-cache": "5.1.0",
