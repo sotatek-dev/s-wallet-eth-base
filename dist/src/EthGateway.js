@@ -201,12 +201,12 @@ var EthGateway = (function (_super) {
             });
         });
     };
-    EthGateway.prototype.getAddressBalance = function (address) {
+    EthGateway.prototype.getAddressBalance = function (address, blockNumber) {
         return __awaiter(this, void 0, void 0, function () {
             var balance;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4, web3_1.web3.eth.getBalance(address)];
+                    case 0: return [4, web3_1.web3.eth.getBalance(address, blockNumber)];
                     case 1:
                         balance = _a.sent();
                         return [2, new sota_common_1.BigNumber(balance.toString())];

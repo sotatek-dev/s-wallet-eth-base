@@ -96,12 +96,12 @@ var Erc20Gateway = (function (_super) {
             });
         });
     };
-    Erc20Gateway.prototype.getAddressBalance = function (address) {
+    Erc20Gateway.prototype.getAddressBalance = function (address, blockNumber) {
         return __awaiter(this, void 0, void 0, function () {
             var balance;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4, this._contract.methods.balanceOf(address).call()];
+                    case 0: return [4, this._contract.methods.balanceOf(address).call({}, blockNumber)];
                     case 1:
                         balance = _a.sent();
                         return [2, new sota_common_1.BigNumber(balance.toString())];
@@ -315,7 +315,7 @@ var Erc20Gateway = (function (_super) {
     __decorate([
         sota_common_1.implement,
         __metadata("design:type", Function),
-        __metadata("design:paramtypes", [String]),
+        __metadata("design:paramtypes", [String, Number]),
         __metadata("design:returntype", Promise)
     ], Erc20Gateway.prototype, "getAddressBalance", null);
     __decorate([

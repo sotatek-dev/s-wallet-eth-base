@@ -170,10 +170,10 @@ export class EthGateway extends AccountBasedGateway {
    * Get balance of an address
    *
    * @param {String} address: address that want to query balance
-   * @returns {Number}: the current balance of address
+   * @returns {Number}: the balance of address
    */
-  public async getAddressBalance(address: string): Promise<BigNumber> {
-    const balance = await web3.eth.getBalance(address);
+  public async getAddressBalance(address: string, blockNumber?: number): Promise<BigNumber> {
+    const balance = await web3.eth.getBalance(address, blockNumber);
     return new BigNumber(balance.toString());
   }
 
