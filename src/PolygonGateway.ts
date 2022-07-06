@@ -134,10 +134,6 @@ export class PolygonGateway extends EthGateway {
     };
   }
   public async sendRawTransaction(rawTx: string, retryCount?: number): Promise<ISubmittedTransaction> {
-    if (!rawTx.startsWith('0x')) {
-      rawTx = '0x' + rawTx;
-    }
-
     const ethTx = new EthereumTx(EthereumTx.fromSerializedTx(Buffer.from(rawTx, 'hex')), { common: this.commonOpts });
     let txid = ethTx.hash().toString('hex');
     if (!txid.startsWith('0x')) {
