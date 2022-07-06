@@ -151,17 +151,17 @@ var PolygonGateway = (function (_super) {
     };
     PolygonGateway.prototype.signRawTransaction = function (unsignedRaw, secret) {
         return __awaiter(this, void 0, void 0, function () {
-            var ethTx, privateKey;
+            var ethTx, privateKey, signedEthTx;
             return __generator(this, function (_a) {
                 if (secret.startsWith('0x')) {
                     secret = secret.substr(2);
                 }
                 ethTx = new tx_1.Transaction(tx_1.Transaction.fromSerializedTx(buffer_1.Buffer.from(unsignedRaw, 'hex')), { common: this.commonOpts });
                 privateKey = buffer_1.Buffer.from(secret, 'hex');
-                ethTx.sign(privateKey);
+                signedEthTx = ethTx.sign(privateKey);
                 return [2, {
                         txid: "0x" + ethTx.hash().toString('hex'),
-                        signedRaw: ethTx.serialize().toString('hex'),
+                        signedRaw: signedEthTx.serialize().toString('hex'),
                         unsignedRaw: unsignedRaw,
                     }];
             });
@@ -185,8 +185,8 @@ var PolygonGateway = (function (_super) {
                     case 1:
                         _b.trys.push([1, 3, , 6]);
                         return [4, Promise.all([
-                                web3_1.web3.eth.sendSignedTransaction(rawTx),
-                                web3_1.infuraWeb3.eth.sendSignedTransaction(rawTx),
+                                web3_1.web3.eth.sendSignedTransaction("0x" + rawTx),
+                                web3_1.infuraWeb3.eth.sendSignedTransaction("0x" + rawTx),
                             ])];
                     case 2:
                         _a = _b.sent(), receipt = _a[0], infuraReceipt = _a[1];
