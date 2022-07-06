@@ -34,7 +34,7 @@ EnvConfigRegistry.onNetworkChanged(network => {
 });
 
 CurrencyRegistry.onCurrencyConfigSet((currency, config) => {
-  if (currency.symbol !== BlockchainPlatform.Ethereum) {
+  if (currency.symbol !== BlockchainPlatform.Ethereum && currency.platform !== BlockchainPlatform.Polygon) {
     return;
   }
 
