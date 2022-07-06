@@ -125,11 +125,11 @@ export class PolygonGateway extends EthGateway {
 
     const ethTx = new EthereumTx(EthereumTx.fromSerializedTx(Buffer.from(unsignedRaw, 'hex')), { common: this.commonOpts });
     const privateKey = Buffer.from(secret, 'hex');
-    ethTx.sign(privateKey);
+    const signedEthTx = ethTx.sign(privateKey);
 
     return {
       txid: `0x${ethTx.hash().toString('hex')}`,
-      signedRaw: ethTx.serialize().toString('hex'),
+      signedRaw: signedEthTx.serialize().toString('hex'),
       unsignedRaw,
     };
   }
@@ -146,8 +146,8 @@ export class PolygonGateway extends EthGateway {
 
     try {
       const [receipt, infuraReceipt] = await Promise.all([
-        web3.eth.sendSignedTransaction(rawTx),
-        infuraWeb3.eth.sendSignedTransaction(rawTx),
+        web3.eth.sendSignedTransaction(`0x${rawTx}`),
+        infuraWeb3.eth.sendSignedTransaction(`0x${rawTx}`),
       ]);
       logger.info(`EthGateway::sendRawTransaction infura_txid=${infuraReceipt.transactionHash}`);
       return { txid: receipt.transactionHash };
