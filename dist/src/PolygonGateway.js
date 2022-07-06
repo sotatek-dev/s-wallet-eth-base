@@ -173,9 +173,6 @@ var PolygonGateway = (function (_super) {
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
-                        if (!rawTx.startsWith('0x')) {
-                            rawTx = '0x' + rawTx;
-                        }
                         ethTx = new tx_1.Transaction(tx_1.Transaction.fromSerializedTx(buffer_1.Buffer.from(rawTx, 'hex')), { common: this.commonOpts });
                         txid = ethTx.hash().toString('hex');
                         if (!txid.startsWith('0x')) {

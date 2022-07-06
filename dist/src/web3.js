@@ -31,7 +31,7 @@ sota_common_1.EnvConfigRegistry.onNetworkChanged(function (network) {
     }
 });
 sota_common_1.CurrencyRegistry.onCurrencyConfigSet(function (currency, config) {
-    if (currency.symbol !== sota_common_1.BlockchainPlatform.Ethereum) {
+    if (currency.symbol !== sota_common_1.BlockchainPlatform.Ethereum && currency.platform !== sota_common_1.BlockchainPlatform.Polygon) {
         return;
     }
     logger.info("web3::onCurrencyConfigSet currency=" + currency.symbol + " config=" + JSON.stringify(config));
