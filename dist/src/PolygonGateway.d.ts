@@ -1,5 +1,5 @@
 import EthGateway from './EthGateway';
-import { Address, BigNumber, IRawTransaction, ISignedRawTransaction, ISubmittedTransaction } from 'sota-common';
+import { Address, BigNumber, IErc20Token, IRawTransaction, ISignedRawTransaction, ISubmittedTransaction } from 'sota-common';
 import Common from '@ethereumjs/common';
 export declare class PolygonGateway extends EthGateway {
     readonly commonOpts: Common;
@@ -13,4 +13,5 @@ export declare class PolygonGateway extends EthGateway {
     }): Promise<IRawTransaction>;
     signRawTransaction(unsignedRaw: string, secret: string): Promise<ISignedRawTransaction>;
     sendRawTransaction(rawTx: string, retryCount?: number): Promise<ISubmittedTransaction>;
+    getErc20TokenInfo(contractAddress: string): Promise<IErc20Token>;
 }

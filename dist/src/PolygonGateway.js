@@ -65,6 +65,7 @@ var lru_cache_1 = __importDefault(require("lru-cache"));
 var common_1 = __importStar(require("@ethereumjs/common"));
 var tx_1 = require("@ethereumjs/tx");
 var web3_1 = require("./web3");
+var erc20_json_1 = __importDefault(require("../config/abi/erc20.json"));
 var buffer_1 = require("buffer");
 var logger = sota_common_1.getLogger('PolygonGateway');
 var _cacheBlockNumber = {
@@ -221,6 +222,49 @@ var PolygonGateway = (function (_super) {
                         }
                         return [2, this.sendRawTransaction(rawTx, retryCount + 1)];
                     case 6: return [2];
+                }
+            });
+        });
+    };
+    PolygonGateway.prototype.getErc20TokenInfo = function (contractAddress) {
+        return __awaiter(this, void 0, void 0, function () {
+            var contract, _a, networkSymbol, name_1, decimals, symbol, e_2;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        contractAddress = this.normalizeAddress(contractAddress);
+                        _b.label = 1;
+                    case 1:
+                        _b.trys.push([1, 3, , 4]);
+                        contract = new web3_1.web3.eth.Contract(erc20_json_1.default, contractAddress);
+                        return [4, Promise.all([
+                                contract.methods.symbol().call(),
+                                contract.methods.name().call(),
+                                contract.methods.decimals().call(),
+                            ])];
+                    case 2:
+                        _a = _b.sent(), networkSymbol = _a[0], name_1 = _a[1], decimals = _a[2];
+                        symbol = [sota_common_1.TokenType.POLERC20, contractAddress].join('.');
+                        return [2, {
+                                symbol: symbol,
+                                networkSymbol: networkSymbol.toLowerCase(),
+                                tokenType: sota_common_1.TokenType.POLERC20,
+                                name: name_1,
+                                platform: sota_common_1.BlockchainPlatform.Polygon,
+                                isNative: false,
+                                isUTXOBased: false,
+                                contractAddress: contractAddress,
+                                decimals: decimals,
+                                humanReadableScale: decimals,
+                                nativeScale: 0,
+                                hasMemo: false,
+                            }];
+                    case 3:
+                        e_2 = _b.sent();
+                        logger.error("EthGateway::getErc20TokenInfo could not get info contract=" + contractAddress + " due to error:");
+                        logger.error(e_2);
+                        return [2, null];
+                    case 4: return [2];
                 }
             });
         });
