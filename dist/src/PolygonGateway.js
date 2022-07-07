@@ -110,10 +110,10 @@ var PolygonGateway = (function (_super) {
                         _c.label = 4;
                     case 4:
                         if (!_gasPrice || !_gasPrice.gt(new sota_common_1.BigNumber(0))) {
-                            throw new Error("EthGateway::constructRawTransaction could not construct tx, invalid gas price: " + (_gasPrice || _gasPrice.toString()));
+                            throw new Error("PolygonGateway::constructRawTransaction could not construct tx, invalid gas price: " + (_gasPrice || _gasPrice.toString()));
                         }
                         else {
-                            logger.debug("EthGateway::constructRawTransaction gasPrice=" + _gasPrice.toString());
+                            logger.debug("PolygonGateway::constructRawTransaction gasPrice=" + _gasPrice.toString());
                         }
                         gasPrice = web3_1.web3.utils.toBN(_gasPrice);
                         gasLimit = web3_1.web3.utils.toBN(options.isConsolidate ? 21000 : 150000);
@@ -129,7 +129,7 @@ var PolygonGateway = (function (_super) {
                     case 5:
                         balance = _b.apply(_a, [(_c.sent()).toString()]);
                         if (balance.lt(amount.add(fee))) {
-                            throw new Error("EthGateway::constructRawTransaction could not construct tx because of insufficient balance:          address=" + fromAddress + ", balance=" + balance + ", amount=" + amount + ", fee=" + fee);
+                            throw new Error("PolygonGateway::constructRawTransaction could not construct tx because of insufficient balance:          address=" + fromAddress + ", balance=" + balance + ", amount=" + amount + ", fee=" + fee);
                         }
                         txParams = {
                             gasLimit: web3_1.web3.utils.toHex(options.isConsolidate ? 21000 : 150000),
@@ -139,7 +139,7 @@ var PolygonGateway = (function (_super) {
                             value: web3_1.web3.utils.toHex(amount),
                             data: '0x',
                         };
-                        logger.info("EthGateway::constructRawTransaction txParams=" + JSON.stringify(txParams));
+                        logger.info("PolygonGateway::constructRawTransaction txParams=" + JSON.stringify(txParams));
                         tx = new tx_1.Transaction(txParams, { common: this.commonOpts });
                         return [2, {
                                 txid: "0x" + tx.hash().toString('hex'),
@@ -190,7 +190,7 @@ var PolygonGateway = (function (_super) {
                             ])];
                     case 2:
                         _a = _b.sent(), receipt = _a[0], infuraReceipt = _a[1];
-                        logger.info("EthGateway::sendRawTransaction infura_txid=" + infuraReceipt.transactionHash);
+                        logger.info("PolygonGateway::sendRawTransaction infura_txid=" + infuraReceipt.transactionHash);
                         return [2, { txid: receipt.transactionHash }];
                     case 3:
                         e_1 = _b.sent();

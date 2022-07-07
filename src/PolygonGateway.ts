@@ -72,10 +72,10 @@ export class PolygonGateway extends EthGateway {
      */
     if (!_gasPrice || !_gasPrice.gt(new BigNumber(0))) {
       throw new Error(
-        `EthGateway::constructRawTransaction could not construct tx, invalid gas price: ${_gasPrice || _gasPrice.toString()}`
+        `PolygonGateway::constructRawTransaction could not construct tx, invalid gas price: ${_gasPrice || _gasPrice.toString()}`
       );
     } else {
-      logger.debug(`EthGateway::constructRawTransaction gasPrice=${_gasPrice.toString()}`);
+      logger.debug(`PolygonGateway::constructRawTransaction gasPrice=${_gasPrice.toString()}`);
     }
 
     const gasPrice = web3.utils.toBN(_gasPrice);
@@ -95,7 +95,7 @@ export class PolygonGateway extends EthGateway {
     const balance = web3.utils.toBN((await web3.eth.getBalance(fromAddress)).toString());
     if (balance.lt(amount.add(fee))) {
       throw new Error(
-        `EthGateway::constructRawTransaction could not construct tx because of insufficient balance: \
+        `PolygonGateway::constructRawTransaction could not construct tx because of insufficient balance: \
          address=${fromAddress}, balance=${balance}, amount=${amount}, fee=${fee}`
       );
     }
@@ -108,7 +108,7 @@ export class PolygonGateway extends EthGateway {
       value: web3.utils.toHex(amount),
       data: '0x',
     };
-    logger.info(`EthGateway::constructRawTransaction txParams=${JSON.stringify(txParams)}`);
+    logger.info(`PolygonGateway::constructRawTransaction txParams=${JSON.stringify(txParams)}`);
 
     const tx = new EthereumTx(txParams, { common: this.commonOpts });
 
@@ -149,7 +149,7 @@ export class PolygonGateway extends EthGateway {
         web3.eth.sendSignedTransaction(`0x${rawTx}`),
         infuraWeb3.eth.sendSignedTransaction(`0x${rawTx}`),
       ]);
-      logger.info(`EthGateway::sendRawTransaction infura_txid=${infuraReceipt.transactionHash}`);
+      logger.info(`PolygonGateway::sendRawTransaction infura_txid=${infuraReceipt.transactionHash}`);
       return { txid: receipt.transactionHash };
     } catch (e) {
       // Former format of error message when sending duplicate transaction
