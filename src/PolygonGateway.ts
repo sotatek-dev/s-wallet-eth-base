@@ -45,8 +45,7 @@ GatewayRegistry.registerLazyCreateMethod(CurrencyRegistry.Polygon, () => new Pol
 export class PolygonGateway extends EthGateway {
   readonly commonOpts: Common;
   constructor() {
-    super();
-    this._currency = CurrencyRegistry.Polygon;
+    super(CurrencyRegistry.Polygon);
     this.commonOpts = Common.custom(EnvConfigRegistry.getCustomEnvConfig('NETWORK') !== 'testnet' ? CustomChain.PolygonMainnet : CustomChain.PolygonMumbai);
   }
 

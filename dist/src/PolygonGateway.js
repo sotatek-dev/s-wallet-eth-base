@@ -87,8 +87,7 @@ sota_common_1.GatewayRegistry.registerLazyCreateMethod(sota_common_1.CurrencyReg
 var PolygonGateway = (function (_super) {
     __extends(PolygonGateway, _super);
     function PolygonGateway() {
-        var _this = _super.call(this) || this;
-        _this._currency = sota_common_1.CurrencyRegistry.Polygon;
+        var _this = _super.call(this, sota_common_1.CurrencyRegistry.Polygon) || this;
         _this.commonOpts = common_1.default.custom(sota_common_1.EnvConfigRegistry.getCustomEnvConfig('NETWORK') !== 'testnet' ? common_1.CustomChain.PolygonMainnet : common_1.CustomChain.PolygonMumbai);
         return _this;
     }
