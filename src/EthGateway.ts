@@ -22,6 +22,7 @@ import {
   BlockchainPlatform,
   getRedisClient,
   EnvConfigRegistry,
+  ICurrency,
 } from 'sota-common';
 import LRU from 'lru-cache';
 import { EthTransaction } from './EthTransaction';
@@ -52,8 +53,8 @@ const _isRequestingReceipt: Map<string, boolean> = new Map<string, boolean>();
 GatewayRegistry.registerLazyCreateMethod(CurrencyRegistry.Ethereum, () => new EthGateway());
 
 export class EthGateway extends AccountBasedGateway {
-  public constructor() {
-    super(CurrencyRegistry.Ethereum);
+  public constructor(currency?: ICurrency) {
+    super(currency ? currency : CurrencyRegistry.Ethereum);
   }
 
   /**
