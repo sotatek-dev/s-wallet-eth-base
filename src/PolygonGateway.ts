@@ -71,10 +71,10 @@ export class PolygonGateway extends EthGateway {
      */
     if (!_gasPrice || !_gasPrice.gt(new BigNumber(0))) {
       throw new Error(
-        `EthGateway::constructRawTransaction could not construct tx, invalid gas price: ${_gasPrice || _gasPrice.toString()}`
+        `PolygonGateway::constructRawTransaction could not construct tx, invalid gas price: ${_gasPrice || _gasPrice.toString()}`
       );
     } else {
-      logger.debug(`EthGateway::constructRawTransaction gasPrice=${_gasPrice.toString()}`);
+      logger.debug(`PolygonGateway::constructRawTransaction gasPrice=${_gasPrice.toString()}`);
     }
 
     const gasPrice = web3.utils.toBN(_gasPrice);
@@ -94,7 +94,7 @@ export class PolygonGateway extends EthGateway {
     const balance = web3.utils.toBN((await web3.eth.getBalance(fromAddress)).toString());
     if (balance.lt(amount.add(fee))) {
       throw new Error(
-        `EthGateway::constructRawTransaction could not construct tx because of insufficient balance: \
+        `PolygonGateway::constructRawTransaction could not construct tx because of insufficient balance: \
          address=${fromAddress}, balance=${balance}, amount=${amount}, fee=${fee}`
       );
     }
@@ -107,7 +107,7 @@ export class PolygonGateway extends EthGateway {
       value: web3.utils.toHex(amount),
       data: '0x',
     };
-    logger.info(`EthGateway::constructRawTransaction txParams=${JSON.stringify(txParams)}`);
+    logger.info(`PolygonGateway::constructRawTransaction txParams=${JSON.stringify(txParams)}`);
 
     const tx = new EthereumTx(txParams, { common: this.commonOpts });
 
@@ -124,19 +124,15 @@ export class PolygonGateway extends EthGateway {
 
     const ethTx = new EthereumTx(EthereumTx.fromSerializedTx(Buffer.from(unsignedRaw, 'hex')), { common: this.commonOpts });
     const privateKey = Buffer.from(secret, 'hex');
-    ethTx.sign(privateKey);
+    const signedTx = ethTx.sign(privateKey);
 
     return {
       txid: `0x${ethTx.hash().toString('hex')}`,
-      signedRaw: ethTx.serialize().toString('hex'),
+      signedRaw: signedTx.serialize().toString('hex'),
       unsignedRaw,
     };
   }
   public async sendRawTransaction(rawTx: string, retryCount?: number): Promise<ISubmittedTransaction> {
-    if (!rawTx.startsWith('0x')) {
-      rawTx = '0x' + rawTx;
-    }
-
     const ethTx = new EthereumTx(EthereumTx.fromSerializedTx(Buffer.from(rawTx, 'hex')), { common: this.commonOpts });
     let txid = ethTx.hash().toString('hex');
     if (!txid.startsWith('0x')) {
@@ -149,10 +145,10 @@ export class PolygonGateway extends EthGateway {
 
     try {
       const [receipt, infuraReceipt] = await Promise.all([
-        web3.eth.sendSignedTransaction(rawTx),
-        infuraWeb3.eth.sendSignedTransaction(rawTx),
+        web3.eth.sendSignedTransaction(`0x${rawTx}`),
+        infuraWeb3.eth.sendSignedTransaction(`0x${rawTx}`),
       ]);
-      logger.info(`EthGateway::sendRawTransaction infura_txid=${infuraReceipt.transactionHash}`);
+      logger.info(`PolygonGateway::sendRawTransaction infura_txid=${infuraReceipt.transactionHash}`);
       return { txid: receipt.transactionHash };
     } catch (e) {
       // Former format of error message when sending duplicate transaction
