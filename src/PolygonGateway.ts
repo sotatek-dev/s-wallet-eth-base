@@ -6,9 +6,15 @@ import {
   EnvConfigRegistry,
   GatewayRegistry,
   getLogger,
-  IRawTransaction, ISignedRawTransaction, ISubmittedTransaction
+  IRawTransaction,
+  IErc20Token,
+  ISignedRawTransaction,
+  ISubmittedTransaction,
+  TokenType,
+  BlockchainPlatform
 } from 'sota-common';
 import LRU from 'lru-cache';
+import ERC20ABI from '../config/abi/erc20.json';
 import * as web3_types from 'web3/eth/types';
 import * as web3_types2 from 'web3/types';
 import Common, { CustomChain } from '@ethereumjs/common'
@@ -187,6 +193,39 @@ export class PolygonGateway extends EthGateway {
       }
 
       return this.sendRawTransaction(rawTx, retryCount + 1);
+    }
+  }
+
+  public async getErc20TokenInfo(contractAddress: string): Promise<IErc20Token> {
+    contractAddress = this.normalizeAddress(contractAddress);
+    try {
+      const contract = new web3.eth.Contract(ERC20ABI, contractAddress);
+      const [networkSymbol, name, decimals] = await Promise.all([
+        contract.methods.symbol().call(),
+        contract.methods.name().call(),
+        contract.methods.decimals().call(),
+      ]);
+
+      const symbol = [TokenType.POLERC20, contractAddress].join('.');
+
+      return {
+        symbol,
+        networkSymbol: networkSymbol.toLowerCase(),
+        tokenType: TokenType.POLERC20,
+        name,
+        platform: BlockchainPlatform.Polygon,
+        isNative: false,
+        isUTXOBased: false,
+        contractAddress,
+        decimals,
+        humanReadableScale: decimals,
+        nativeScale: 0,
+        hasMemo: false,
+      };
+    } catch (e) {
+      logger.error(`EthGateway::getErc20TokenInfo could not get info contract=${contractAddress} due to error:`);
+      logger.error(e);
+      return null;
     }
   }
 }
