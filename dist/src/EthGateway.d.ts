@@ -1,10 +1,10 @@
 import * as web3_accounts from 'web3/eth/accounts';
 import * as web3_types from 'web3/eth/types';
 import * as web3_types2 from 'web3/types';
-import { Block, AccountBasedGateway, IRawTransaction, ISignedRawTransaction, ISubmittedTransaction, TransactionStatus, Address, BigNumber, IErc20Token } from 'sota-common';
+import { Block, AccountBasedGateway, IRawTransaction, ISignedRawTransaction, ISubmittedTransaction, TransactionStatus, Address, BigNumber, IErc20Token, ICurrency } from 'sota-common';
 import { EthTransaction } from './EthTransaction';
 export declare class EthGateway extends AccountBasedGateway {
-    constructor();
+    constructor(currency?: ICurrency);
     getGasPrice(useLowerNetworkFee?: boolean): Promise<BigNumber>;
     getParallelNetworkRequestLimit(): number;
     getAverageSeedingFee(): Promise<BigNumber>;
