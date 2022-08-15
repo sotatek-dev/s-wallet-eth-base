@@ -11,4 +11,7 @@ __export(require("./src/Erc20Transaction"));
 __export(require("./src/EthWebServer"));
 __export(require("./src/EthCrawler"));
 __export(require("./src/web3"));
+__export(require("./src/PolygonWebServer"));
+__export(require("./src/PolygonGateway"));
+__export(require("./src/PolygonErc20Gateway"));
 //# sourceMappingURL=index.js.map
