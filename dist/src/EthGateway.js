@@ -95,8 +95,8 @@ var _isRequestingReceipt = new Map();
 sota_common_1.GatewayRegistry.registerLazyCreateMethod(sota_common_1.CurrencyRegistry.Ethereum, function () { return new EthGateway(); });
 var EthGateway = (function (_super) {
     __extends(EthGateway, _super);
-    function EthGateway() {
-        return _super.call(this, sota_common_1.CurrencyRegistry.Ethereum) || this;
+    function EthGateway(currency) {
+        return _super.call(this, currency ? currency : sota_common_1.CurrencyRegistry.Ethereum) || this;
     }
     EthGateway.prototype.getGasPrice = function (useLowerNetworkFee) {
         return __awaiter(this, void 0, void 0, function () {
