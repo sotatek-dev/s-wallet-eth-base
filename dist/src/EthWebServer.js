@@ -66,8 +66,8 @@ var sota_common_1 = require("sota-common");
 var logger = sota_common_1.getLogger('EthWebServer');
 var EthWebServer = (function (_super) {
     __extends(EthWebServer, _super);
-    function EthWebServer(platform) {
-        return _super.call(this, platform ? platform : sota_common_1.BlockchainPlatform.Ethereum) || this;
+    function EthWebServer() {
+        return _super.call(this, sota_common_1.BlockchainPlatform.Ethereum) || this;
     }
     EthWebServer.prototype.getERC20TokenInfo = function (req, res) {
         return __awaiter(this, void 0, void 0, function () {
