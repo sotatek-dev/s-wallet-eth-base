@@ -1,6 +1,6 @@
-import { BaseWebServer, BlockchainPlatform } from 'sota-common';
+import { BaseWebServer } from 'sota-common';
 export declare class EthWebServer extends BaseWebServer {
-    constructor(platform?: BlockchainPlatform);
+    constructor();
     protected getERC20TokenInfo(req: any, res: any): Promise<void>;
     protected setup(): void;
 }

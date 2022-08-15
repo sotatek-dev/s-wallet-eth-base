@@ -6,6 +6,3 @@ export * from './src/Erc20Transaction';
 export * from './src/EthWebServer';
 export * from './src/EthCrawler';
 export * from './src/web3';
-export * from './src/PolygonWebServer';
-export * from './src/PolygonGateway';
-export * from './src/PolygonErc20Gateway';

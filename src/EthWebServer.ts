@@ -5,8 +5,8 @@ import EthGateway from './EthGateway';
 const logger = getLogger('EthWebServer');
 
 export class EthWebServer extends BaseWebServer {
-  public constructor(platform?: BlockchainPlatform) {
-    super(platform ? platform : BlockchainPlatform.Ethereum);
+  public constructor() {
+    super(BlockchainPlatform.Ethereum);
   }
 
   protected async getERC20TokenInfo(req: any, res: any) {
