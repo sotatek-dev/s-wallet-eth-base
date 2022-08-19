@@ -78,12 +78,12 @@ export class EthGateway extends AccountBasedGateway {
     let multipler = 5;
     if (!!useLowerNetworkFee) {
       multipler = 2;
-      const configMultiplerLow = parseInt(EnvConfigRegistry.getCustomEnvConfig('ETH_MAX_GAS_MULTIPLER_LOW'), 10);
+      const configMultiplerLow = parseFloat(EnvConfigRegistry.getCustomEnvConfig('ETH_MAX_GAS_MULTIPLER_LOW'));
       if (!isNaN(configMultiplerLow)) {
         multipler = configMultiplerLow;
       }
     } else {
-      const configMultiplerHigh = parseInt(EnvConfigRegistry.getCustomEnvConfig('ETH_MAX_GAS_MULTIPLER_HIGH'), 10);
+      const configMultiplerHigh = parseFloat(EnvConfigRegistry.getCustomEnvConfig('ETH_MAX_GAS_MULTIPLER_HIGH'));
       if (!isNaN(configMultiplerHigh)) {
         multipler = configMultiplerHigh;
       }

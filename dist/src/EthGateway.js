@@ -116,13 +116,13 @@ var EthGateway = (function (_super) {
                         multipler = 5;
                         if (!!useLowerNetworkFee) {
                             multipler = 2;
-                            configMultiplerLow = parseInt(sota_common_1.EnvConfigRegistry.getCustomEnvConfig('ETH_MAX_GAS_MULTIPLER_LOW'), 10);
+                            configMultiplerLow = parseFloat(sota_common_1.EnvConfigRegistry.getCustomEnvConfig('ETH_MAX_GAS_MULTIPLER_LOW'));
                             if (!isNaN(configMultiplerLow)) {
                                 multipler = configMultiplerLow;
                             }
                         }
                         else {
-                            configMultiplerHigh = parseInt(sota_common_1.EnvConfigRegistry.getCustomEnvConfig('ETH_MAX_GAS_MULTIPLER_HIGH'), 10);
+                            configMultiplerHigh = parseFloat(sota_common_1.EnvConfigRegistry.getCustomEnvConfig('ETH_MAX_GAS_MULTIPLER_HIGH'));
                             if (!isNaN(configMultiplerHigh)) {
                                 multipler = configMultiplerHigh;
                             }
