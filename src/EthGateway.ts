@@ -89,9 +89,9 @@ export class EthGateway extends AccountBasedGateway {
       }
     }
 
-    const multiplyGasPrice = baseGasPrice.multipliedBy(multipler);
+    const multiplyGasPrice = baseGasPrice.multipliedBy(multipler).toFixed(0);
     if (finalGasPrice.gt(multiplyGasPrice)) {
-      finalGasPrice = multiplyGasPrice;
+      finalGasPrice = new BigNumber(multiplyGasPrice);
     }
 
     // Buffer some gas to make sure transaction can be confirmed faster

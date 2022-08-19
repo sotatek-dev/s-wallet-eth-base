@@ -127,9 +127,9 @@ var EthGateway = (function (_super) {
                                 multipler = configMultiplerHigh;
                             }
                         }
-                        multiplyGasPrice = baseGasPrice.multipliedBy(multipler);
+                        multiplyGasPrice = baseGasPrice.multipliedBy(multipler).toFixed(0);
                         if (finalGasPrice.gt(multiplyGasPrice)) {
-                            finalGasPrice = multiplyGasPrice;
+                            finalGasPrice = new sota_common_1.BigNumber(multiplyGasPrice);
                         }
                         plusGas = 20000000000;
                         configPlusGas = parseInt(sota_common_1.EnvConfigRegistry.getCustomEnvConfig('ETH_MAX_GAS_PLUS'), 10);
