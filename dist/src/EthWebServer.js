@@ -3,10 +3,12 @@ var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
         extendStatics = Object.setPrototypeOf ||
             ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
         return extendStatics(d, b);
     };
     return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
         extendStatics(d, b);
         function __() { this.constructor = d; }
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -36,7 +38,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     function verb(n) { return function (v) { return step([n, v]); }; }
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
-        while (_) try {
+        while (g && (g = 0, op[0] && (_ = 0)), _) try {
             if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
             if (y = 0, t) op = [op[0] & 2, t.value];
             switch (op[0]) {
@@ -61,9 +63,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.EthWebServer = void 0;
 var util_1 = __importDefault(require("util"));
 var sota_common_1 = require("sota-common");
-var logger = sota_common_1.getLogger('EthWebServer');
+var logger = (0, sota_common_1.getLogger)('EthWebServer');
 var EthWebServer = (function (_super) {
     __extends(EthWebServer, _super);
     function EthWebServer(platform) {
@@ -104,7 +107,7 @@ var EthWebServer = (function (_super) {
                         return [3, 3];
                     case 2:
                         e_1 = _a.sent();
-                        logger.error("err=" + util_1.default.inspect(e_1));
+                        logger.error("err=".concat(util_1.default.inspect(e_1)));
                         res.status(500).json({ error: e_1.message || e_1.toString() });
                         return [3, 3];
                     case 3: return [2];

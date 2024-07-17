@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.toBlockType = void 0;
 function toBlockType(blockNumber) {
     if (typeof blockNumber === 'number') {
         return blockNumber;
@@ -12,7 +13,7 @@ function toBlockType(blockNumber) {
         case 'pending':
             return 'pending';
         default:
-            throw new Error("Invalid blockType value: " + blockNumber);
+            throw new Error("Invalid blockType value: ".concat(blockNumber));
     }
 }
 exports.toBlockType = toBlockType;

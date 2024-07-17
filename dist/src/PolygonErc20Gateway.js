@@ -3,15 +3,40 @@ var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
         extendStatics = Object.setPrototypeOf ||
             ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
         return extendStatics(d, b);
     };
     return function (d, b) {
+        if (typeof b !== "function" && b !== null)
+            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
         extendStatics(d, b);
         function __() { this.constructor = d; }
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -27,7 +52,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     function verb(n) { return function (v) { return step([n, v]); }; }
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
-        while (_) try {
+        while (g && (g = 0, op[0] && (_ = 0)), _) try {
             if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
             if (y = 0, t) op = [op[0] & 2, t.value];
             switch (op[0]) {
@@ -51,23 +76,17 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-    result["default"] = mod;
-    return result;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.PolygonErc20Gateway = void 0;
 var Erc20Gateway_1 = __importDefault(require("./Erc20Gateway"));
 var sota_common_1 = require("sota-common");
 var tx_1 = require("@ethereumjs/tx");
 var web3_1 = require("./web3");
 var util_1 = require("util");
 var common_1 = __importStar(require("@ethereumjs/common"));
-var logger = sota_common_1.getLogger('PolygonErc20Gateway');
+var logger = (0, sota_common_1.getLogger)('PolygonErc20Gateway');
 sota_common_1.CurrencyRegistry.onPolERC20TokenRegistered(function (token) {
-    logger.info("Register PolErc20Gateway to registry: " + token.symbol);
+    logger.info("Register PolErc20Gateway to registry: ".concat(token.symbol));
     sota_common_1.GatewayRegistry.registerLazyCreateMethod(token, function () { return new PolygonErc20Gateway(token); });
 });
 var PolygonErc20Gateway = (function (_super) {
@@ -102,10 +121,10 @@ var PolygonErc20Gateway = (function (_super) {
                             minGasPrice = new sota_common_1.BigNumber(configMinGasPrice);
                         }
                         if (!_gasPrice || !_gasPrice.gt(minGasPrice)) {
-                            throw new Error("Erc20Gateway::constructRawTransaction could not construct tx, invalid gas price: " + (_gasPrice || _gasPrice.toString()));
+                            throw new Error("Erc20Gateway::constructRawTransaction could not construct tx, invalid gas price: ".concat(_gasPrice || _gasPrice.toString()));
                         }
                         else {
-                            logger.debug("Erc20Gateway::constructRawTransaction gasPrice=" + _gasPrice.toString());
+                            logger.debug("Erc20Gateway::constructRawTransaction gasPrice=".concat(_gasPrice.toString()));
                         }
                         gasPrice = web3_1.web3.utils.toBN(_gasPrice);
                         if (!options.explicitGasLimit) return [3, 5];
@@ -121,8 +140,8 @@ var PolygonErc20Gateway = (function (_super) {
                         return [3, 8];
                     case 7:
                         e_1 = _e.sent();
-                        logger.error("Erc20Gateway::constructRawTransaction cannot estimate gas for transfer method error=" + util_1.inspect(e_1));
-                        throw new Error("Erc20Gateway::constructRawTransaction cannot estimate gas for transfer method, error=" + e_1.toString());
+                        logger.error("Erc20Gateway::constructRawTransaction cannot estimate gas for transfer method error=".concat((0, util_1.inspect)(e_1)));
+                        throw new Error("Erc20Gateway::constructRawTransaction cannot estimate gas for transfer method, error=".concat(e_1.toString()));
                     case 8:
                         if (_gasLimit < 150000) {
                             _gasLimit = 150000;
@@ -143,10 +162,10 @@ var PolygonErc20Gateway = (function (_super) {
                     case 11:
                         balance = _d.apply(_c, [_e.sent()]);
                         if (balance.lt(amount)) {
-                            throw new Error("Erc20Gateway::constructRawTransaction Could not construct tx because of insufficient balance: address=" + fromAddress + ", amount=" + amount + ", fee=" + fee);
+                            throw new Error("Erc20Gateway::constructRawTransaction Could not construct tx because of insufficient balance: address=".concat(fromAddress, ", amount=").concat(amount, ", fee=").concat(fee));
                         }
                         if (ethBalance.lt(fee)) {
-                            throw new Error("Erc20Gateway::constructRawTransaction Could not construct tx because of lacking fee: address=" + fromAddress + ", fee=" + fee + ", ethBalance=" + ethBalance);
+                            throw new Error("Erc20Gateway::constructRawTransaction Could not construct tx because of lacking fee: address=".concat(fromAddress, ", fee=").concat(fee, ", ethBalance=").concat(ethBalance));
                         }
                         txParams = {
                             data: this._contract.methods.transfer(toAddress, amount.toString()).encodeABI(),
@@ -156,10 +175,10 @@ var PolygonErc20Gateway = (function (_super) {
                             to: this._currency.contractAddress,
                             value: web3_1.web3.utils.toHex(0),
                         };
-                        logger.info("Erc20Gateway::constructRawTransaction txParams=" + JSON.stringify(txParams));
+                        logger.info("Erc20Gateway::constructRawTransaction txParams=".concat(JSON.stringify(txParams)));
                         tx = new tx_1.Transaction(txParams, { common: this.commonOpts });
                         return [2, {
-                                txid: "0x" + tx.hash().toString('hex'),
+                                txid: "0x".concat(tx.hash().toString('hex')),
                                 unsignedRaw: tx.serialize().toString('hex'),
                             }];
                 }
