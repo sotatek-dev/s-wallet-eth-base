@@ -16,11 +16,7 @@ var __extends = (this && this.__extends) || (function () {
 })();
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -52,7 +48,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     function verb(n) { return function (v) { return step([n, v]); }; }
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
-        while (g && (g = 0, op[0] && (_ = 0)), _) try {
+        while (_) try {
             if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
             if (y = 0, t) op = [op[0] & 2, t.value];
             switch (op[0]) {
@@ -129,10 +125,10 @@ var PolygonGateway = (function (_super) {
                         _c.label = 4;
                     case 4:
                         if (!_gasPrice || !_gasPrice.gt(new sota_common_1.BigNumber(0))) {
-                            throw new Error("PolygonGateway::constructRawTransaction could not construct tx, invalid gas price: ".concat(_gasPrice || _gasPrice.toString()));
+                            throw new Error("PolygonGateway::constructRawTransaction could not construct tx, invalid gas price: " + (_gasPrice || _gasPrice.toString()));
                         }
                         else {
-                            logger.debug("PolygonGateway::constructRawTransaction gasPrice=".concat(_gasPrice.toString()));
+                            logger.debug("PolygonGateway::constructRawTransaction gasPrice=" + _gasPrice.toString());
                         }
                         gasPrice = web3_1.web3.utils.toBN(_gasPrice);
                         gasLimit = web3_1.web3.utils.toBN(options.isConsolidate ? 21000 : 150000);
@@ -148,7 +144,7 @@ var PolygonGateway = (function (_super) {
                     case 5:
                         balance = _b.apply(_a, [(_c.sent()).toString()]);
                         if (balance.lt(amount.add(fee))) {
-                            throw new Error("PolygonGateway::constructRawTransaction could not construct tx because of insufficient balance:          address=".concat(fromAddress, ", balance=").concat(balance, ", amount=").concat(amount, ", fee=").concat(fee));
+                            throw new Error("PolygonGateway::constructRawTransaction could not construct tx because of insufficient balance:          address=" + fromAddress + ", balance=" + balance + ", amount=" + amount + ", fee=" + fee);
                         }
                         txParams = {
                             gasLimit: web3_1.web3.utils.toHex(options.isConsolidate ? 21000 : 150000),
@@ -158,10 +154,10 @@ var PolygonGateway = (function (_super) {
                             value: web3_1.web3.utils.toHex(amount),
                             data: '0x',
                         };
-                        logger.info("PolygonGateway::constructRawTransaction txParams=".concat(JSON.stringify(txParams)));
+                        logger.info("PolygonGateway::constructRawTransaction txParams=" + JSON.stringify(txParams));
                         tx = new tx_1.Transaction(txParams, { common: this.commonOpts });
                         return [2, {
-                                txid: "0x".concat(tx.hash().toString('hex')),
+                                txid: "0x" + tx.hash().toString('hex'),
                                 unsignedRaw: tx.serialize().toString('hex'),
                             }];
                 }
@@ -179,7 +175,7 @@ var PolygonGateway = (function (_super) {
                 privateKey = buffer_1.Buffer.from(secret, 'hex');
                 signedTx = ethTx.sign(privateKey);
                 return [2, {
-                        txid: "0x".concat(ethTx.hash().toString('hex')),
+                        txid: "0x" + ethTx.hash().toString('hex'),
                         signedRaw: signedTx.serialize().toString('hex'),
                         unsignedRaw: unsignedRaw,
                     }];
@@ -204,12 +200,12 @@ var PolygonGateway = (function (_super) {
                     case 1:
                         _b.trys.push([1, 3, , 6]);
                         return [4, Promise.all([
-                                web3_1.web3.eth.sendSignedTransaction("0x".concat(rawTx)),
-                                web3_1.infuraWeb3.eth.sendSignedTransaction("0x".concat(rawTx)),
+                                web3_1.web3.eth.sendSignedTransaction("0x" + rawTx),
+                                web3_1.infuraWeb3.eth.sendSignedTransaction("0x" + rawTx),
                             ])];
                     case 2:
                         _a = _b.sent(), receipt = _a[0], infuraReceipt = _a[1];
-                        logger.info("PolygonGateway::sendRawTransaction infura_txid=".concat(infuraReceipt.transactionHash));
+                        logger.info("PolygonGateway::sendRawTransaction infura_txid=" + infuraReceipt.transactionHash);
                         return [2, { txid: receipt.transactionHash }];
                     case 3:
                         e_1 = _b.sent();
@@ -235,7 +231,7 @@ var PolygonGateway = (function (_super) {
                         throw e_1;
                     case 5:
                         if (retryCount + 1 > 5) {
-                            logger.error("Too many fails sending txid=".concat(txid, " tx=").concat(JSON.stringify(ethTx.toJSON()), " err=").concat(e_1.toString()));
+                            logger.error("Too many fails sending txid=" + txid + " tx=" + JSON.stringify(ethTx.toJSON()) + " err=" + e_1.toString());
                             throw e_1;
                         }
                         return [2, this.sendRawTransaction(rawTx, retryCount + 1)];
@@ -279,7 +275,7 @@ var PolygonGateway = (function (_super) {
                             }];
                     case 3:
                         e_2 = _b.sent();
-                        logger.error("EthGateway::getErc20TokenInfo could not get info contract=".concat(contractAddress, " due to error:"));
+                        logger.error("EthGateway::getErc20TokenInfo could not get info contract=" + contractAddress + " due to error:");
                         logger.error(e_2);
                         return [2, null];
                     case 4: return [2];

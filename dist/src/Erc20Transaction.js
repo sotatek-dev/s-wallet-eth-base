@@ -23,7 +23,7 @@ var Erc20Transaction = (function (_super) {
     function Erc20Transaction(currency, txProps, receipt) {
         var _this = this;
         if (!web3_1.web3.utils.isAddress(currency.contractAddress)) {
-            throw new Error("Invalid ERC20 contract address: ".concat(currency.contractAddress));
+            throw new Error("Invalid ERC20 contract address: " + currency.contractAddress);
         }
         _this = _super.call(this, txProps) || this;
         _this.receiptStatus = receipt.status;

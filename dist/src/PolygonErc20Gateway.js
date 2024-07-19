@@ -16,11 +16,7 @@ var __extends = (this && this.__extends) || (function () {
 })();
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -52,7 +48,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     function verb(n) { return function (v) { return step([n, v]); }; }
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
-        while (g && (g = 0, op[0] && (_ = 0)), _) try {
+        while (_) try {
             if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
             if (y = 0, t) op = [op[0] & 2, t.value];
             switch (op[0]) {
@@ -86,7 +82,7 @@ var util_1 = require("util");
 var common_1 = __importStar(require("@ethereumjs/common"));
 var logger = (0, sota_common_1.getLogger)('PolygonErc20Gateway');
 sota_common_1.CurrencyRegistry.onPolERC20TokenRegistered(function (token) {
-    logger.info("Register PolErc20Gateway to registry: ".concat(token.symbol));
+    logger.info("Register PolErc20Gateway to registry: " + token.symbol);
     sota_common_1.GatewayRegistry.registerLazyCreateMethod(token, function () { return new PolygonErc20Gateway(token); });
 });
 var PolygonErc20Gateway = (function (_super) {
@@ -121,10 +117,10 @@ var PolygonErc20Gateway = (function (_super) {
                             minGasPrice = new sota_common_1.BigNumber(configMinGasPrice);
                         }
                         if (!_gasPrice || !_gasPrice.gt(minGasPrice)) {
-                            throw new Error("Erc20Gateway::constructRawTransaction could not construct tx, invalid gas price: ".concat(_gasPrice || _gasPrice.toString()));
+                            throw new Error("Erc20Gateway::constructRawTransaction could not construct tx, invalid gas price: " + (_gasPrice || _gasPrice.toString()));
                         }
                         else {
-                            logger.debug("Erc20Gateway::constructRawTransaction gasPrice=".concat(_gasPrice.toString()));
+                            logger.debug("Erc20Gateway::constructRawTransaction gasPrice=" + _gasPrice.toString());
                         }
                         gasPrice = web3_1.web3.utils.toBN(_gasPrice);
                         if (!options.explicitGasLimit) return [3, 5];
@@ -140,8 +136,8 @@ var PolygonErc20Gateway = (function (_super) {
                         return [3, 8];
                     case 7:
                         e_1 = _e.sent();
-                        logger.error("Erc20Gateway::constructRawTransaction cannot estimate gas for transfer method error=".concat((0, util_1.inspect)(e_1)));
-                        throw new Error("Erc20Gateway::constructRawTransaction cannot estimate gas for transfer method, error=".concat(e_1.toString()));
+                        logger.error("Erc20Gateway::constructRawTransaction cannot estimate gas for transfer method error=" + (0, util_1.inspect)(e_1));
+                        throw new Error("Erc20Gateway::constructRawTransaction cannot estimate gas for transfer method, error=" + e_1.toString());
                     case 8:
                         if (_gasLimit < 150000) {
                             _gasLimit = 150000;
@@ -162,10 +158,10 @@ var PolygonErc20Gateway = (function (_super) {
                     case 11:
                         balance = _d.apply(_c, [_e.sent()]);
                         if (balance.lt(amount)) {
-                            throw new Error("Erc20Gateway::constructRawTransaction Could not construct tx because of insufficient balance: address=".concat(fromAddress, ", amount=").concat(amount, ", fee=").concat(fee));
+                            throw new Error("Erc20Gateway::constructRawTransaction Could not construct tx because of insufficient balance: address=" + fromAddress + ", amount=" + amount + ", fee=" + fee);
                         }
                         if (ethBalance.lt(fee)) {
-                            throw new Error("Erc20Gateway::constructRawTransaction Could not construct tx because of lacking fee: address=".concat(fromAddress, ", fee=").concat(fee, ", ethBalance=").concat(ethBalance));
+                            throw new Error("Erc20Gateway::constructRawTransaction Could not construct tx because of lacking fee: address=" + fromAddress + ", fee=" + fee + ", ethBalance=" + ethBalance);
                         }
                         txParams = {
                             data: this._contract.methods.transfer(toAddress, amount.toString()).encodeABI(),
@@ -175,10 +171,10 @@ var PolygonErc20Gateway = (function (_super) {
                             to: this._currency.contractAddress,
                             value: web3_1.web3.utils.toHex(0),
                         };
-                        logger.info("Erc20Gateway::constructRawTransaction txParams=".concat(JSON.stringify(txParams)));
+                        logger.info("Erc20Gateway::constructRawTransaction txParams=" + JSON.stringify(txParams));
                         tx = new tx_1.Transaction(txParams, { common: this.commonOpts });
                         return [2, {
-                                txid: "0x".concat(tx.hash().toString('hex')),
+                                txid: "0x" + tx.hash().toString('hex'),
                                 unsignedRaw: tx.serialize().toString('hex'),
                             }];
                 }

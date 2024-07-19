@@ -16,7 +16,7 @@ function updateEthConfig(network) {
             Object.assign(exports.EthConfig, rinkeby_json_1.default);
             break;
         default:
-            throw new Error("Invalid environment variable value: NETWORK=".concat(process.env.NETWORK));
+            throw new Error("Invalid environment variable value: NETWORK=" + process.env.NETWORK);
     }
 }
 exports.updateEthConfig = updateEthConfig;
