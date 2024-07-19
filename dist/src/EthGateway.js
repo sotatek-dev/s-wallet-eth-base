@@ -7,8 +7,6 @@ var __extends = (this && this.__extends) || (function () {
         return extendStatics(d, b);
     };
     return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
         extendStatics(d, b);
         function __() { this.constructor = d; }
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -93,7 +91,7 @@ var ethereumjs = __importStar(require("ethereumjs-tx"));
 var common_1 = __importDefault(require("@ethereumjs/common"));
 var tx_1 = require("@ethereumjs/tx");
 var EthereumTx = ethereumjs.Transaction;
-var logger = (0, sota_common_1.getLogger)('EthGateway');
+var logger = sota_common_1.getLogger('EthGateway');
 var _cacheBlockNumber = {
     value: 0,
     updatedAt: 0,
@@ -452,7 +450,7 @@ var EthGateway = (function (_super) {
                     case 0:
                         key = '_cacheRawTxByHash_' + this.getCurrency().symbol + txid;
                         if (!!!sota_common_1.EnvConfigRegistry.isUsingRedis()) return [3, 2];
-                        redisClient = (0, sota_common_1.getRedisClient)();
+                        redisClient = sota_common_1.getRedisClient();
                         return [4, redisClient.get(key)];
                     case 1:
                         cachedData = _a.sent();
@@ -504,7 +502,7 @@ var EthGateway = (function (_super) {
                     case 0:
                         key = '_cacheRawTxReceipt_' + this.getCurrency().symbol + txid;
                         if (!!!sota_common_1.EnvConfigRegistry.isUsingRedis()) return [3, 2];
-                        redisClient = (0, sota_common_1.getRedisClient)();
+                        redisClient = sota_common_1.getRedisClient();
                         return [4, redisClient.get(key)];
                     case 1:
                         cachedData = _a.sent();

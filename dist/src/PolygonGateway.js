@@ -7,8 +7,6 @@ var __extends = (this && this.__extends) || (function () {
         return extendStatics(d, b);
     };
     return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
         extendStatics(d, b);
         function __() { this.constructor = d; }
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -82,7 +80,7 @@ var common_1 = __importStar(require("@ethereumjs/common"));
 var tx_1 = require("@ethereumjs/tx");
 var web3_1 = require("./web3");
 var buffer_1 = require("buffer");
-var logger = (0, sota_common_1.getLogger)('PolygonGateway');
+var logger = sota_common_1.getLogger('PolygonGateway');
 var _cacheBlockNumber = {
     value: 0,
     updatedAt: 0,

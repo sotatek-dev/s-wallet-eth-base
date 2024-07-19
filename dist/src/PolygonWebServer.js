@@ -7,8 +7,6 @@ var __extends = (this && this.__extends) || (function () {
         return extendStatics(d, b);
     };
     return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
         extendStatics(d, b);
         function __() { this.constructor = d; }
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -18,7 +16,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.PolygonWebServer = void 0;
 var sota_common_1 = require("sota-common");
 var EthWebServer_1 = require("./EthWebServer");
-var logger = (0, sota_common_1.getLogger)('PolygonWebServer');
+var logger = sota_common_1.getLogger('PolygonWebServer');
 var PolygonWebServer = (function (_super) {
     __extends(PolygonWebServer, _super);
     function PolygonWebServer() {

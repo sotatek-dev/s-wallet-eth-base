@@ -7,8 +7,6 @@ var __extends = (this && this.__extends) || (function () {
         return extendStatics(d, b);
     };
     return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
         extendStatics(d, b);
         function __() { this.constructor = d; }
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -92,7 +90,7 @@ var Erc20Transaction_1 = __importDefault(require("./Erc20Transaction"));
 var erc20_json_1 = __importDefault(require("../config/abi/erc20.json"));
 var common_1 = __importDefault(require("@ethereumjs/common"));
 var tx_1 = require("@ethereumjs/tx");
-var logger = (0, sota_common_1.getLogger)('Erc20Gateway');
+var logger = sota_common_1.getLogger('Erc20Gateway');
 var EthereumTx = ethereumjs.Transaction;
 sota_common_1.CurrencyRegistry.onERC20TokenRegistered(function (token) {
     logger.info("Register Erc20Gateway to the registry: " + token.symbol);
@@ -180,7 +178,7 @@ var Erc20Gateway = (function (_super) {
                         return [3, 8];
                     case 7:
                         e_1 = _e.sent();
-                        logger.error("Erc20Gateway::constructRawTransaction cannot estimate gas for transfer method error=" + (0, util_1.inspect)(e_1));
+                        logger.error("Erc20Gateway::constructRawTransaction cannot estimate gas for transfer method error=" + util_1.inspect(e_1));
                         throw new Error("Erc20Gateway::constructRawTransaction cannot estimate gas for transfer method, error=" + e_1.toString());
                     case 8:
                         if (_gasLimit < 150000) {

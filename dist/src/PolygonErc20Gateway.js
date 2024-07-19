@@ -7,8 +7,6 @@ var __extends = (this && this.__extends) || (function () {
         return extendStatics(d, b);
     };
     return function (d, b) {
-        if (typeof b !== "function" && b !== null)
-            throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
         extendStatics(d, b);
         function __() { this.constructor = d; }
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
@@ -80,7 +78,7 @@ var tx_1 = require("@ethereumjs/tx");
 var web3_1 = require("./web3");
 var util_1 = require("util");
 var common_1 = __importStar(require("@ethereumjs/common"));
-var logger = (0, sota_common_1.getLogger)('PolygonErc20Gateway');
+var logger = sota_common_1.getLogger('PolygonErc20Gateway');
 sota_common_1.CurrencyRegistry.onPolERC20TokenRegistered(function (token) {
     logger.info("Register PolErc20Gateway to registry: " + token.symbol);
     sota_common_1.GatewayRegistry.registerLazyCreateMethod(token, function () { return new PolygonErc20Gateway(token); });
@@ -136,7 +134,7 @@ var PolygonErc20Gateway = (function (_super) {
                         return [3, 8];
                     case 7:
                         e_1 = _e.sent();
-                        logger.error("Erc20Gateway::constructRawTransaction cannot estimate gas for transfer method error=" + (0, util_1.inspect)(e_1));
+                        logger.error("Erc20Gateway::constructRawTransaction cannot estimate gas for transfer method error=" + util_1.inspect(e_1));
                         throw new Error("Erc20Gateway::constructRawTransaction cannot estimate gas for transfer method, error=" + e_1.toString());
                     case 8:
                         if (_gasLimit < 150000) {
