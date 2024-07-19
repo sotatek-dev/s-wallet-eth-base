@@ -16,11 +16,7 @@ var __extends = (this && this.__extends) || (function () {
 })();
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -61,7 +57,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     function verb(n) { return function (v) { return step([n, v]); }; }
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
-        while (g && (g = 0, op[0] && (_ = 0)), _) try {
+        while (_) try {
             if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
             if (y = 0, t) op = [op[0] & 2, t.value];
             switch (op[0]) {
@@ -94,6 +90,8 @@ var EthTypeConverter = __importStar(require("./EthTypeConverter"));
 var web3_1 = require("./web3");
 var erc20_json_1 = __importDefault(require("../config/abi/erc20.json"));
 var ethereumjs = __importStar(require("ethereumjs-tx"));
+var common_1 = __importDefault(require("@ethereumjs/common"));
+var tx_1 = require("@ethereumjs/tx");
 var EthereumTx = ethereumjs.Transaction;
 var logger = (0, sota_common_1.getLogger)('EthGateway');
 var _cacheBlockNumber = {
@@ -111,11 +109,23 @@ var _cacheRawTxReceipt = new lru_cache_1.default({
 });
 var _isRequestingTx = new Map();
 var _isRequestingReceipt = new Map();
+var EthereumMainnet = {
+    name: 'mainnet',
+    chainId: 1,
+    networkId: 1,
+};
+var EthereumTestnetSepolia = {
+    name: 'sepolia',
+    chainId: 11155111,
+    networkId: 11155111,
+};
 sota_common_1.GatewayRegistry.registerLazyCreateMethod(sota_common_1.CurrencyRegistry.Ethereum, function () { return new EthGateway(); });
 var EthGateway = (function (_super) {
     __extends(EthGateway, _super);
     function EthGateway(currency) {
-        return _super.call(this, currency ? currency : sota_common_1.CurrencyRegistry.Ethereum) || this;
+        var _this = _super.call(this, currency ? currency : sota_common_1.CurrencyRegistry.Ethereum) || this;
+        _this.commonOpts = common_1.default.custom(sota_common_1.EnvConfigRegistry.getCustomEnvConfig('NETWORK') !== 'testnet' ? EthereumMainnet : EthereumTestnetSepolia);
+        return _this;
     }
     EthGateway.prototype.getGasPrice = function (useLowerNetworkFee) {
         return __awaiter(this, void 0, void 0, function () {
@@ -189,7 +199,7 @@ var EthGateway = (function (_super) {
     };
     EthGateway.prototype.normalizeAddress = function (address) {
         if (!web3_1.web3.utils.isAddress(address)) {
-            throw new Error("Invalid address: ".concat(address));
+            throw new Error("Invalid address: " + address);
         }
         return web3_1.web3.utils.toChecksumAddress(address);
     };
@@ -258,7 +268,7 @@ var EthGateway = (function (_super) {
                         _cacheBlockNumber.value = blockNum;
                         _cacheBlockNumber.updatedAt = newUpdatedAt;
                         _cacheBlockNumber.isRequesting = false;
-                        logger.debug("EthGateway::getBlockCount value=".concat(blockNum, " updatedAt=").concat(newUpdatedAt));
+                        logger.debug("EthGateway::getBlockCount value=" + blockNum + " updatedAt=" + newUpdatedAt);
                         return [2, blockNum];
                 }
             });
@@ -283,10 +293,10 @@ var EthGateway = (function (_super) {
                         _c.label = 4;
                     case 4:
                         if (!_gasPrice || !_gasPrice.gt(new sota_common_1.BigNumber(0))) {
-                            throw new Error("EthGateway::constructRawTransaction could not construct tx, invalid gas price: ".concat(_gasPrice || _gasPrice.toString()));
+                            throw new Error("EthGateway::constructRawTransaction could not construct tx, invalid gas price: " + (_gasPrice || _gasPrice.toString()));
                         }
                         else {
-                            logger.debug("EthGateway::constructRawTransaction gasPrice=".concat(_gasPrice.toString()));
+                            logger.debug("EthGateway::constructRawTransaction gasPrice=" + _gasPrice.toString());
                         }
                         gasPrice = web3_1.web3.utils.toBN(_gasPrice);
                         gasLimit = web3_1.web3.utils.toBN(options.isConsolidate ? 21000 : 150000);
@@ -302,7 +312,7 @@ var EthGateway = (function (_super) {
                     case 5:
                         balance = _b.apply(_a, [(_c.sent()).toString()]);
                         if (balance.lt(amount.add(fee))) {
-                            throw new Error("EthGateway::constructRawTransaction could not construct tx because of insufficient balance:          address=".concat(fromAddress, ", balance=").concat(balance, ", amount=").concat(amount, ", fee=").concat(fee));
+                            throw new Error("EthGateway::constructRawTransaction could not construct tx because of insufficient balance:          address=" + fromAddress + ", balance=" + balance + ", amount=" + amount + ", fee=" + fee);
                         }
                         txParams = {
                             gasLimit: web3_1.web3.utils.toHex(options.isConsolidate ? 21000 : 150000),
@@ -312,10 +322,10 @@ var EthGateway = (function (_super) {
                             value: web3_1.web3.utils.toHex(amount),
                             data: '0x',
                         };
-                        logger.info("EthGateway::constructRawTransaction txParams=".concat(JSON.stringify(txParams)));
-                        tx = new EthereumTx(txParams);
+                        logger.info("EthGateway::constructRawTransaction txParams=" + JSON.stringify(txParams));
+                        tx = new tx_1.Transaction(txParams, { common: this.commonOpts });
                         return [2, {
-                                txid: "0x".concat(tx.hash().toString('hex')),
+                                txid: "0x" + tx.hash().toString('hex'),
                                 unsignedRaw: tx.serialize().toString('hex'),
                             }];
                 }
@@ -325,7 +335,7 @@ var EthGateway = (function (_super) {
     EthGateway.prototype.reconstructRawTx = function (rawTx) {
         var tx = new EthereumTx(rawTx);
         return {
-            txid: "0x".concat(tx.hash().toString('hex')),
+            txid: "0x" + tx.hash().toString('hex'),
             unsignedRaw: tx.serialize().toString('hex'),
         };
     };
@@ -336,11 +346,11 @@ var EthGateway = (function (_super) {
                 if (secret.startsWith('0x')) {
                     secret = secret.substr(2);
                 }
-                ethTx = new EthereumTx(unsignedRaw, { chain: this.getChainName() });
+                ethTx = new tx_1.Transaction(tx_1.Transaction.fromSerializedTx(Buffer.from(unsignedRaw, 'hex')), { common: this.commonOpts });
                 privateKey = Buffer.from(secret, 'hex');
                 ethTx.sign(privateKey);
                 return [2, {
-                        txid: "0x".concat(ethTx.hash().toString('hex')),
+                        txid: "0x" + ethTx.hash().toString('hex'),
                         signedRaw: ethTx.serialize().toString('hex'),
                         unsignedRaw: unsignedRaw,
                     }];
@@ -356,7 +366,7 @@ var EthGateway = (function (_super) {
                         if (!rawTx.startsWith('0x')) {
                             rawTx = '0x' + rawTx;
                         }
-                        ethTx = new EthereumTx(rawTx, { chain: this.getChainName() });
+                        ethTx = new tx_1.Transaction(tx_1.Transaction.fromSerializedTx(Buffer.from(rawTx, 'hex')), { common: this.commonOpts });
                         txid = ethTx.hash().toString('hex');
                         if (!txid.startsWith('0x')) {
                             txid = '0x' + txid;
@@ -373,7 +383,7 @@ var EthGateway = (function (_super) {
                             ])];
                     case 2:
                         _a = _b.sent(), receipt = _a[0], infuraReceipt = _a[1];
-                        logger.info("EthGateway::sendRawTransaction infura_txid=".concat(infuraReceipt.transactionHash));
+                        logger.info("EthGateway::sendRawTransaction infura_txid=" + infuraReceipt.transactionHash);
                         return [2, { txid: receipt.transactionHash }];
                     case 3:
                         e_1 = _b.sent();
@@ -399,7 +409,7 @@ var EthGateway = (function (_super) {
                         throw e_1;
                     case 5:
                         if (retryCount + 1 > 5) {
-                            logger.error("Too many fails sending txid=".concat(txid, " tx=").concat(JSON.stringify(ethTx.toJSON()), " err=").concat(e_1.toString()));
+                            logger.error("Too many fails sending txid=" + txid + " tx=" + JSON.stringify(ethTx.toJSON()) + " err=" + e_1.toString());
                             throw e_1;
                         }
                         return [2, this.sendRawTransaction(rawTx, retryCount + 1)];
@@ -473,7 +483,7 @@ var EthGateway = (function (_super) {
                         }
                         if (!tx.blockNumber) {
                             gwName = this.constructor.name;
-                            throw new Error("".concat(gwName, "::getRawTransaction tx doesn't have block number txid=").concat(txid));
+                            throw new Error(gwName + "::getRawTransaction tx doesn't have block number txid=" + txid);
                         }
                         if (redisClient) {
                             redisClient.setex(key, 120, JSON.stringify(tx));
@@ -520,7 +530,7 @@ var EthGateway = (function (_super) {
                         _isRequestingReceipt.delete(txid);
                         if (!receipt) {
                             gwName = this.constructor.name;
-                            throw new Error("".concat(gwName, "::getRawTransactionReceipt could not get receipt txid=").concat(txid));
+                            throw new Error(gwName + "::getRawTransactionReceipt could not get receipt txid=" + txid);
                         }
                         if (redisClient) {
                             redisClient.setex(key, 120, JSON.stringify(receipt));
@@ -568,7 +578,7 @@ var EthGateway = (function (_super) {
                             }];
                     case 3:
                         e_2 = _b.sent();
-                        logger.error("EthGateway::getErc20TokenInfo could not get info contract=".concat(contractAddress, " due to error:"));
+                        logger.error("EthGateway::getErc20TokenInfo could not get info contract=" + contractAddress + " due to error:");
                         logger.error(e_2);
                         return [2, null];
                     case 4: return [2];

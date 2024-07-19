@@ -13,7 +13,7 @@ function toBlockType(blockNumber) {
         case 'pending':
             return 'pending';
         default:
-            throw new Error("Invalid blockType value: ".concat(blockNumber));
+            throw new Error("Invalid blockType value: " + blockNumber);
     }
 }
 exports.toBlockType = toBlockType;
