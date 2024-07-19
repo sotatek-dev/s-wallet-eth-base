@@ -38,7 +38,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     function verb(n) { return function (v) { return step([n, v]); }; }
     function step(op) {
         if (f) throw new TypeError("Generator is already executing.");
-        while (g && (g = 0, op[0] && (_ = 0)), _) try {
+        while (_) try {
             if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
             if (y = 0, t) op = [op[0] & 2, t.value];
             switch (op[0]) {
@@ -107,7 +107,7 @@ var EthWebServer = (function (_super) {
                         return [3, 3];
                     case 2:
                         e_1 = _a.sent();
-                        logger.error("err=".concat(util_1.default.inspect(e_1)));
+                        logger.error("err=" + util_1.default.inspect(e_1));
                         res.status(500).json({ error: e_1.message || e_1.toString() });
                         return [3, 3];
                     case 3: return [2];
