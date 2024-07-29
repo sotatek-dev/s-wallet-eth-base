@@ -88,8 +88,6 @@ var EthTypeConverter = __importStar(require("./EthTypeConverter"));
 var web3_1 = require("./web3");
 var erc20_json_1 = __importDefault(require("../config/abi/erc20.json"));
 var ethereumjs = __importStar(require("ethereumjs-tx"));
-var common_1 = __importDefault(require("@ethereumjs/common"));
-var tx_1 = require("@ethereumjs/tx");
 var EthereumTx = ethereumjs.Transaction;
 var logger = sota_common_1.getLogger('EthGateway');
 var _cacheBlockNumber = {
@@ -107,23 +105,11 @@ var _cacheRawTxReceipt = new lru_cache_1.default({
 });
 var _isRequestingTx = new Map();
 var _isRequestingReceipt = new Map();
-var EthereumMainnet = {
-    name: 'mainnet',
-    chainId: 1,
-    networkId: 1,
-};
-var EthereumTestnetSepolia = {
-    name: 'sepolia',
-    chainId: 11155111,
-    networkId: 11155111,
-};
 sota_common_1.GatewayRegistry.registerLazyCreateMethod(sota_common_1.CurrencyRegistry.Ethereum, function () { return new EthGateway(); });
 var EthGateway = (function (_super) {
     __extends(EthGateway, _super);
     function EthGateway(currency) {
-        var _this = _super.call(this, currency ? currency : sota_common_1.CurrencyRegistry.Ethereum) || this;
-        _this.commonOpts = common_1.default.custom(sota_common_1.EnvConfigRegistry.getCustomEnvConfig('NETWORK') !== 'testnet' ? EthereumMainnet : EthereumTestnetSepolia);
-        return _this;
+        return _super.call(this, currency ? currency : sota_common_1.CurrencyRegistry.Ethereum) || this;
     }
     EthGateway.prototype.getGasPrice = function (useLowerNetworkFee) {
         return __awaiter(this, void 0, void 0, function () {
@@ -321,7 +307,7 @@ var EthGateway = (function (_super) {
                             data: '0x',
                         };
                         logger.info("EthGateway::constructRawTransaction txParams=" + JSON.stringify(txParams));
-                        tx = new tx_1.Transaction(txParams, { common: this.commonOpts });
+                        tx = new EthereumTx(txParams);
                         return [2, {
                                 txid: "0x" + tx.hash().toString('hex'),
                                 unsignedRaw: tx.serialize().toString('hex'),
@@ -344,7 +330,7 @@ var EthGateway = (function (_super) {
                 if (secret.startsWith('0x')) {
                     secret = secret.substr(2);
                 }
-                ethTx = new tx_1.Transaction(tx_1.Transaction.fromSerializedTx(Buffer.from(unsignedRaw, 'hex')), { common: this.commonOpts });
+                ethTx = new EthereumTx(unsignedRaw, { chain: this.getChainName() });
                 privateKey = Buffer.from(secret, 'hex');
                 ethTx.sign(privateKey);
                 return [2, {
@@ -364,7 +350,7 @@ var EthGateway = (function (_super) {
                         if (!rawTx.startsWith('0x')) {
                             rawTx = '0x' + rawTx;
                         }
-                        ethTx = new tx_1.Transaction(tx_1.Transaction.fromSerializedTx(Buffer.from(rawTx, 'hex')), { common: this.commonOpts });
+                        ethTx = new EthereumTx(rawTx, { chain: this.getChainName() });
                         txid = ethTx.hash().toString('hex');
                         if (!txid.startsWith('0x')) {
                             txid = '0x' + txid;

@@ -30,8 +30,6 @@ import * as EthTypeConverter from './EthTypeConverter';
 import { web3, infuraWeb3 } from './web3';
 import ERC20ABI from '../config/abi/erc20.json';
 import * as ethereumjs from 'ethereumjs-tx';
-import Common, { CustomChain } from '@ethereumjs/common';
-import { Transaction } from '@ethereumjs/tx';
 
 const EthereumTx = ethereumjs.Transaction;
 const logger = getLogger('EthGateway');
@@ -52,24 +50,11 @@ const _cacheRawTxReceipt: LRU<string, web3_types2.TransactionReceipt> = new LRU(
 const _isRequestingTx: Map<string, boolean> = new Map<string, boolean>();
 const _isRequestingReceipt: Map<string, boolean> = new Map<string, boolean>();
 
-const EthereumMainnet = {
-  name: 'mainnet',
-  chainId: 1,
-  networkId: 1,
-}
-const EthereumTestnetSepolia = {
-  name: 'sepolia',
-  chainId: 11155111,
-  networkId: 11155111,
-}
 GatewayRegistry.registerLazyCreateMethod(CurrencyRegistry.Ethereum, () => new EthGateway());
 
 export class EthGateway extends AccountBasedGateway {
-  readonly commonOpts: Common;
   public constructor(currency?: ICurrency) {
     super(currency ? currency : CurrencyRegistry.Ethereum);
-    this.commonOpts = Common.custom(EnvConfigRegistry.getCustomEnvConfig('NETWORK') !== 'testnet' ? EthereumMainnet : EthereumTestnetSepolia);
-
   }
 
   /**
@@ -292,7 +277,7 @@ export class EthGateway extends AccountBasedGateway {
     };
     logger.info(`EthGateway::constructRawTransaction txParams=${JSON.stringify(txParams)}`);
 
-    const tx = new Transaction(txParams, { common: this.commonOpts });
+    const tx = new EthereumTx(txParams);
 
     return {
       txid: `0x${tx.hash().toString('hex')}`,
@@ -322,7 +307,7 @@ export class EthGateway extends AccountBasedGateway {
       secret = secret.substr(2);
     }
 
-    const ethTx = new Transaction(Transaction.fromSerializedTx(Buffer.from(unsignedRaw, 'hex')), { common: this.commonOpts });
+    const ethTx = new EthereumTx(unsignedRaw, { chain: this.getChainName()});
     const privateKey = Buffer.from(secret, 'hex');
     ethTx.sign(privateKey);
 
@@ -344,7 +329,7 @@ export class EthGateway extends AccountBasedGateway {
       rawTx = '0x' + rawTx;
     }
 
-    const ethTx = new Transaction(Transaction.fromSerializedTx(Buffer.from(rawTx, 'hex')), { common: this.commonOpts });
+    const ethTx = new EthereumTx(rawTx, { chain: this.getChainName()});
     let txid = ethTx.hash().toString('hex');
     if (!txid.startsWith('0x')) {
       txid = '0x' + txid;

@@ -23,8 +23,7 @@ import {
 import { inspect } from 'util';
 import Erc20Transaction from './Erc20Transaction';
 import ERC20ABI from '../config/abi/erc20.json';
-import Common, { CustomChain } from '@ethereumjs/common';
-import { Transaction } from '@ethereumjs/tx';
+
 const logger = getLogger('Erc20Gateway');
 const EthereumTx = ethereumjs.Transaction;
 
@@ -33,27 +32,15 @@ CurrencyRegistry.onERC20TokenRegistered((token: IErc20Token) => {
   GatewayRegistry.registerLazyCreateMethod(token, () => new Erc20Gateway(token));
 });
 
-const EthereumMainnet = {
-  name: 'mainnet',
-  chainId: 1,
-  networkId: 1,
-}
-const EthereumTestnetSepolia = {
-  name: 'sepolia',
-  chainId: 11155111,
-  networkId: 11155111,
-}
 export class Erc20Gateway extends AccountBasedGateway {
   protected _contract: any;
   protected _currency: IErc20Token;
   protected _ethGateway: EthGateway;
-  readonly commonOpts: Common;
 
   public constructor(currency: IErc20Token) {
     super(currency);
     this._contract = new web3.eth.Contract(ERC20ABI, currency.contractAddress);
     this._ethGateway = GatewayRegistry.getGatewayInstance(CurrencyRegistry.Ethereum) as EthGateway;
-    this.commonOpts = Common.custom(EnvConfigRegistry.getCustomEnvConfig('NETWORK') !== 'testnet' ? EthereumMainnet : EthereumTestnetSepolia);
   }
 
   public async getAverageSeedingFee(): Promise<BigNumber> {
@@ -159,7 +146,7 @@ export class Erc20Gateway extends AccountBasedGateway {
     };
     logger.info(`Erc20Gateway::constructRawTransaction txParams=${JSON.stringify(txParams)}`);
 
-    const tx = new Transaction(txParams, { common: this.commonOpts });
+    const tx = new EthereumTx(txParams);
 
     return {
       txid: `0x${tx.hash().toString('hex')}`,

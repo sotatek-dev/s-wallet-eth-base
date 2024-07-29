@@ -88,31 +88,18 @@ var sota_common_1 = require("sota-common");
 var util_1 = require("util");
 var Erc20Transaction_1 = __importDefault(require("./Erc20Transaction"));
 var erc20_json_1 = __importDefault(require("../config/abi/erc20.json"));
-var common_1 = __importDefault(require("@ethereumjs/common"));
-var tx_1 = require("@ethereumjs/tx");
 var logger = sota_common_1.getLogger('Erc20Gateway');
 var EthereumTx = ethereumjs.Transaction;
 sota_common_1.CurrencyRegistry.onERC20TokenRegistered(function (token) {
     logger.info("Register Erc20Gateway to the registry: " + token.symbol);
     sota_common_1.GatewayRegistry.registerLazyCreateMethod(token, function () { return new Erc20Gateway(token); });
 });
-var EthereumMainnet = {
-    name: 'mainnet',
-    chainId: 1,
-    networkId: 1,
-};
-var EthereumTestnetSepolia = {
-    name: 'sepolia',
-    chainId: 11155111,
-    networkId: 11155111,
-};
 var Erc20Gateway = (function (_super) {
     __extends(Erc20Gateway, _super);
     function Erc20Gateway(currency) {
         var _this = _super.call(this, currency) || this;
         _this._contract = new web3_1.web3.eth.Contract(erc20_json_1.default, currency.contractAddress);
         _this._ethGateway = sota_common_1.GatewayRegistry.getGatewayInstance(sota_common_1.CurrencyRegistry.Ethereum);
-        _this.commonOpts = common_1.default.custom(sota_common_1.EnvConfigRegistry.getCustomEnvConfig('NETWORK') !== 'testnet' ? EthereumMainnet : EthereumTestnetSepolia);
         return _this;
     }
     Erc20Gateway.prototype.getAverageSeedingFee = function () {
@@ -214,7 +201,7 @@ var Erc20Gateway = (function (_super) {
                             value: web3_1.web3.utils.toHex(0),
                         };
                         logger.info("Erc20Gateway::constructRawTransaction txParams=" + JSON.stringify(txParams));
-                        tx = new tx_1.Transaction(txParams, { common: this.commonOpts });
+                        tx = new EthereumTx(txParams);
                         return [2, {
                                 txid: "0x" + tx.hash().toString('hex'),
                                 unsignedRaw: tx.serialize().toString('hex'),

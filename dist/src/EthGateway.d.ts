@@ -3,9 +3,7 @@ import * as web3_types from 'web3/eth/types';
 import * as web3_types2 from 'web3/types';
 import { Block, AccountBasedGateway, IRawTransaction, ISignedRawTransaction, ISubmittedTransaction, TransactionStatus, Address, BigNumber, IErc20Token, ICurrency } from 'sota-common';
 import { EthTransaction } from './EthTransaction';
-import Common from '@ethereumjs/common';
 export declare class EthGateway extends AccountBasedGateway {
-    readonly commonOpts: Common;
     constructor(currency?: ICurrency);
     getGasPrice(useLowerNetworkFee?: boolean): Promise<BigNumber>;
     getParallelNetworkRequestLimit(): number;
