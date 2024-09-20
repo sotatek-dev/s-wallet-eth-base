@@ -324,11 +324,11 @@ export class EthGateway extends AccountBasedGateway {
 
     const ethTx = new Transaction(Transaction.fromSerializedTx(Buffer.from(unsignedRaw, 'hex')), { common: this.commonOpts });
     const privateKey = Buffer.from(secret, 'hex');
-    ethTx.sign(privateKey);
+    const signedTx = ethTx.sign(privateKey);
 
     return {
       txid: `0x${ethTx.hash().toString('hex')}`,
-      signedRaw: ethTx.serialize().toString('hex'),
+      signedRaw: signedTx.serialize().toString('hex'),
       unsignedRaw,
     };
   }

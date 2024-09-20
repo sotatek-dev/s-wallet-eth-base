@@ -339,17 +339,17 @@ var EthGateway = (function (_super) {
     };
     EthGateway.prototype.signRawTransaction = function (unsignedRaw, secret) {
         return __awaiter(this, void 0, void 0, function () {
-            var ethTx, privateKey;
+            var ethTx, privateKey, signedTx;
             return __generator(this, function (_a) {
                 if (secret.startsWith('0x')) {
                     secret = secret.substr(2);
                 }
                 ethTx = new tx_1.Transaction(tx_1.Transaction.fromSerializedTx(Buffer.from(unsignedRaw, 'hex')), { common: this.commonOpts });
                 privateKey = Buffer.from(secret, 'hex');
-                ethTx.sign(privateKey);
+                signedTx = ethTx.sign(privateKey);
                 return [2, {
                         txid: "0x" + ethTx.hash().toString('hex'),
-                        signedRaw: ethTx.serialize().toString('hex'),
+                        signedRaw: signedTx.serialize().toString('hex'),
                         unsignedRaw: unsignedRaw,
                     }];
             });
