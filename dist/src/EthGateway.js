@@ -361,9 +361,6 @@ var EthGateway = (function (_super) {
             return __generator(this, function (_b) {
                 switch (_b.label) {
                     case 0:
-                        if (!rawTx.startsWith('0x')) {
-                            rawTx = '0x' + rawTx;
-                        }
                         ethTx = new tx_1.Transaction(tx_1.Transaction.fromSerializedTx(Buffer.from(rawTx, 'hex')), { common: this.commonOpts });
                         txid = ethTx.hash().toString('hex');
                         if (!txid.startsWith('0x')) {
@@ -376,8 +373,8 @@ var EthGateway = (function (_super) {
                     case 1:
                         _b.trys.push([1, 3, , 6]);
                         return [4, Promise.all([
-                                web3_1.web3.eth.sendSignedTransaction(rawTx),
-                                web3_1.infuraWeb3.eth.sendSignedTransaction(rawTx),
+                                web3_1.web3.eth.sendSignedTransaction("0x" + rawTx),
+                                web3_1.infuraWeb3.eth.sendSignedTransaction("0x" + rawTx),
                             ])];
                     case 2:
                         _a = _b.sent(), receipt = _a[0], infuraReceipt = _a[1];

@@ -340,9 +340,9 @@ export class EthGateway extends AccountBasedGateway {
    * @returns {String}: the transaction hash in hex
    */
   public async sendRawTransaction(rawTx: string, retryCount?: number): Promise<ISubmittedTransaction> {
-    if (!rawTx.startsWith('0x')) {
-      rawTx = '0x' + rawTx;
-    }
+    // if (!rawTx.startsWith('0x')) {
+    //   rawTx = '0x' + rawTx;
+    // }
 
     const ethTx = new Transaction(Transaction.fromSerializedTx(Buffer.from(rawTx, 'hex')), { common: this.commonOpts });
     let txid = ethTx.hash().toString('hex');
@@ -356,8 +356,8 @@ export class EthGateway extends AccountBasedGateway {
 
     try {
       const [receipt, infuraReceipt] = await Promise.all([
-        web3.eth.sendSignedTransaction(rawTx),
-        infuraWeb3.eth.sendSignedTransaction(rawTx),
+        web3.eth.sendSignedTransaction(`0x${rawTx}`),
+        infuraWeb3.eth.sendSignedTransaction(`0x${rawTx}`),
       ]);
       logger.info(`EthGateway::sendRawTransaction infura_txid=${infuraReceipt.transactionHash}`);
       return { txid: receipt.transactionHash };
